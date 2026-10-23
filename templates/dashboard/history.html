@@ -1,0 +1,670 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History — FitTrack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        (function () {
+            const saved = localStorage.getItem("fittrack-theme") || "light";
+            document.documentElement.setAttribute("data-theme", saved);
+        })();
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --green: #1f6b48;
+            --green-dark: #164a32;
+            --green-soft: #e8f0eb;
+            --green-glow: rgba(31, 107, 72, 0.15);
+            --coral: #e07a3f;
+            --coral-soft: #fbead9;
+            --cream: #faf8f3;
+            --ink: #14181a;
+            --ink-soft: #4a524d;
+            --ink-muted: #8b928c;
+            --border: #e3e6e2;
+            --bg: #ffffff;
+            --surface: #ffffff;
+            --surface-2: #f7f5ef;
+            --shadow-sm: 0 1px 3px rgba(20, 24, 26, 0.04);
+            --shadow-md: 0 4px 12px rgba(20, 24, 26, 0.06);
+            --shadow-lg: 0 12px 32px rgba(20, 24, 26, 0.08);
+        }
+
+        [data-theme="dark"] {
+            --green: #34d399;
+            --green-dark: #10b981;
+            --green-soft: rgba(52, 211, 153, 0.12);
+            --green-glow: rgba(52, 211, 153, 0.25);
+            --coral: #fb923c;
+            --coral-soft: rgba(251, 146, 60, 0.15);
+            --cream: #0f1411;
+            --ink: #f5f7f5;
+            --ink-soft: #b8beba;
+            --ink-muted: #7a827d;
+            --border: #232a26;
+            --bg: #0a0d0b;
+            --surface: #141a16;
+            --surface-2: #1a201c;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            min-height: 100vh;
+            font-size: 15px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        h1, h2, h3 { font-family: "Barlow Condensed", sans-serif; font-weight: 700; letter-spacing: -0.015em; }
+        a { color: inherit; text-decoration: none; }
+
+        .app { display: flex; min-height: 100vh; }
+
+        .sidebar {
+            width: 260px;
+            background: var(--cream);
+            border-right: 1px solid var(--border);
+            padding: 28px 20px 24px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+        }
+
+        .sidebar::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle, var(--green-glow) 1px, transparent 1px);
+            background-size: 28px 28px;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .sidebar-brand {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 32px;
+            padding: 0 8px;
+            font-family: "Barlow Condensed", sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .brand-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--green);
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .brand-dot::after {
+            content: "";
+            position: absolute;
+            inset: -4px;
+            border: 1.5px solid var(--green);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: ping 2s infinite;
+        }
+
+        @keyframes ping { 75%, 100% { transform: scale(1.8); opacity: 0; } }
+
+        .sidebar-brand em { font-style: normal; color: var(--green); }
+
+        .nav-label {
+            position: relative;
+            z-index: 1;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--ink-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            padding: 0 12px;
+            margin-bottom: 10px;
+        }
+
+        .nav-list {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 12px;
+            border-radius: 10px;
+            color: var(--ink-soft);
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+
+        .nav-item:hover { background: var(--surface); color: var(--ink); }
+        .nav-item.active { background: var(--surface); color: var(--green); font-weight: 700; }
+
+        .nav-icon { width: 18px; height: 18px; flex-shrink: 0; }
+
+        .nav-icon svg {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .sidebar-bottom {
+            position: relative;
+            z-index: 1;
+            margin-top: auto;
+            padding-top: 18px;
+            border-top: 1px solid var(--border);
+        }
+
+        .sidebar-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 8px;
+        }
+
+        .profile-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--green), var(--green-dark));
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: "Barlow Condensed", sans-serif;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .profile-info { min-width: 0; flex: 1; }
+
+        .profile-name {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--ink);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .profile-role { font-size: 0.72rem; color: var(--ink-muted); }
+
+        .main {
+            flex: 1;
+            margin-left: 260px;
+            padding: 36px 44px 60px;
+            max-width: 1400px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .page-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--ink-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 4px;
+        }
+
+        .topbar h1 { font-size: 2.2rem; line-height: 1.05; color: var(--ink); }
+
+        .topbar-actions { display: flex; gap: 10px; }
+
+        .theme-toggle {
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover { transform: scale(1.05); box-shadow: var(--shadow-md); }
+
+        .theme-toggle svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--ink);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .theme-toggle .sun-icon { display: none; }
+        .theme-toggle .moon-icon { display: block; }
+        [data-theme="dark"] .theme-toggle .sun-icon { display: block; }
+        [data-theme="dark"] .theme-toggle .moon-icon { display: none; }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 18px;
+            background: var(--green);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-family: "Inter", sans-serif;
+            font-size: 0.86rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 3px 10px var(--green-glow);
+            transition: all 0.18s;
+            text-decoration: none;
+        }
+
+        .btn-primary:hover { background: var(--green-dark); transform: translateY(-1px); box-shadow: 0 8px 20px var(--green-glow); }
+        .btn-primary svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+        .history-table {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .history-header {
+            display: grid;
+            grid-template-columns: 130px 1.5fr 1fr 130px 90px 130px;
+            gap: 16px;
+            padding: 16px 22px;
+            background: var(--surface-2);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--ink-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .history-row {
+            display: grid;
+            grid-template-columns: 130px 1.5fr 1fr 130px 90px 130px;
+            gap: 16px;
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            font-size: 0.86rem;
+            transition: background 0.15s;
+        }
+
+        .history-row:last-child { border-bottom: none; }
+        .history-row:hover { background: var(--surface-2); }
+
+        .history-date { font-size: 0.82rem; color: var(--ink); font-weight: 600; }
+        .history-time { display: block; font-size: 0.7rem; color: var(--ink-muted); font-weight: 400; margin-top: 2px; }
+
+        .history-athlete {
+            font-weight: 600;
+            color: var(--ink);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .history-exercise { color: var(--ink); font-weight: 600; }
+
+        .history-measurement {
+            font-family: "Barlow Condensed", sans-serif;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .history-score {
+            font-family: "Barlow Condensed", sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--green);
+        }
+
+        .history-score small { font-size: 0.72rem; color: var(--ink-muted); font-weight: 500; }
+
+        .rating {
+            display: inline-block;
+            padding: 5px 11px;
+            border-radius: 12px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+
+        .rating.excellent { background: var(--green-soft); color: var(--green); }
+        .rating.good { background: rgba(42, 92, 138, 0.12); color: #2a5c8a; }
+        .rating.average { background: var(--coral-soft); color: var(--coral); }
+        .rating.needs { background: rgba(180, 61, 50, 0.12); color: #b43d32; }
+
+        [data-theme="dark"] .rating.good { color: #60a5fa; }
+        [data-theme="dark"] .rating.needs { color: #f87171; }
+
+        .history-count {
+            text-align: center;
+            padding: 22px;
+            font-size: 0.85rem;
+            color: var(--ink-muted);
+        }
+
+        .history-count b { color: var(--ink); font-weight: 700; }
+
+        .empty-state {
+            background: var(--surface);
+            border: 1px dashed var(--border);
+            border-radius: 16px;
+            padding: 60px 40px;
+            text-align: center;
+        }
+
+        .empty-illustration {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 22px;
+            border-radius: 50%;
+            background: var(--green-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .empty-illustration::after {
+            content: "";
+            position: absolute;
+            inset: -10px;
+            border: 1px dashed var(--green);
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+
+        .empty-illustration svg {
+            width: 40px;
+            height: 40px;
+            fill: none;
+            stroke: var(--green);
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .empty-state h3 { font-size: 1.3rem; color: var(--ink); margin-bottom: 8px; }
+        .empty-state p { font-size: 0.88rem; color: var(--ink-muted); margin-bottom: 24px; }
+
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 16px; left: 16px;
+            z-index: 200;
+            width: 42px; height: 42px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-md);
+        }
+
+        .mobile-toggle svg { width: 20px; height: 20px; stroke: var(--ink); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 90;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
+
+        @media (max-width: 850px) {
+            .mobile-toggle { display: flex; }
+            .sidebar { transform: translateX(-100%); transition: transform 0.25s; }
+            .sidebar.open { transform: translateX(0); }
+            .sidebar-overlay { display: block; }
+            .main { margin-left: 0; padding: 72px 24px 40px; }
+            .topbar h1 { font-size: 1.8rem; }
+
+            .history-header { display: none; }
+            .history-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                padding: 18px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<button class="mobile-toggle" id="mobileToggle" aria-label="Toggle menu">
+    <svg viewBox="0 0 24 24">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+</button>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="app">
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <span class="brand-dot"></span>
+            Fit<em>Track</em>
+        </div>
+        <div class="nav-label">Trainer Panel</div>
+        <nav class="nav-list">
+            <a href="{% url 'dashboard:trainer_dashboard' %}" class="nav-item">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                    </svg>
+                </span>
+                My Athletes
+            </a>
+            <a href="{% url 'dashboard:history' %}" class="nav-item active">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4 19V10"/>
+                        <path d="M11 19V5"/>
+                        <path d="M18 19v-7"/>
+                    </svg>
+                </span>
+                History
+            </a>
+            <a href="{% url 'dashboard:reports' %}" class="nav-item">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9"/>
+                        <path d="M12 7v5l3 3"/>
+                    </svg>
+                </span>
+                Reports
+            </a>
+            <a href="{% url 'accounts:profile_edit' %}" class="nav-item">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="7" r="3.5"/>
+                        <path d="M4.5 20c1-4 4-6 7.5-6s6.5 2 7.5 6"/>
+                    </svg>
+                </span>
+                Profile
+            </a>
+            <a href="/accounts/logout/" class="nav-item">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                </span>
+                Logout
+            </a>
+        </nav>
+        <div class="sidebar-bottom">
+            <div class="sidebar-profile">
+                <div class="profile-avatar">{{ user.first_name|first|upper|default:"U" }}</div>
+                <div class="profile-info">
+                    <div class="profile-name">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="profile-role">{{ user.profile.organization|default:"Coach" }}</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <div>
+                <div class="page-label">History</div>
+                <h1>All Assessments</h1>
+            </div>
+            <div class="topbar-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <svg class="moon-icon" viewBox="0 0 24 24">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                    <svg class="sun-icon" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="4"/>
+                        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+                    </svg>
+                </button>
+                <a href="{% url 'dashboard:export_csv' %}" class="btn-primary">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Export CSV
+                </a>
+            </div>
+        </header>
+
+        {% if assessments %}
+            <div class="history-table">
+                <div class="history-header">
+                    <div>Date</div>
+                    <div>Athlete</div>
+                    <div>Exercise</div>
+                    <div>Measurement</div>
+                    <div>Score</div>
+                    <div>Result</div>
+                </div>
+
+                {% for a in assessments %}
+                    <div class="history-row">
+                        <div class="history-date">
+                            {{ a.created_at|date:"d M Y" }}
+                            <span class="history-time">{{ a.created_at|date:"H:i" }}</span>
+                        </div>
+                        <div class="history-athlete">{{ a.athlete.name }}</div>
+                        <div class="history-exercise">{{ a.exercise }}</div>
+                        <div class="history-measurement">{{ a.measurement|floatformat:1 }}</div>
+                        <div class="history-score">{{ a.score|floatformat:0 }}<small>/100</small></div>
+                        <div>
+                            <span class="rating {% if a.score >= 80 %}excellent{% elif a.score >= 60 %}good{% elif a.score >= 40 %}average{% else %}needs{% endif %}">
+                                {{ a.result }}
+                            </span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="history-count">
+                Total <b>{{ total_count }}</b> assessment{{ total_count|pluralize }}
+            </div>
+
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-illustration">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4 19V10"/>
+                        <path d="M11 19V5"/>
+                        <path d="M18 19v-7"/>
+                    </svg>
+                </div>
+                <h3>No assessments yet</h3>
+                <p>Run your first assessment to see history here.</p>
+            </div>
+        {% endif %}
+    </main>
+
+</div>
+
+<script>
+    document.getElementById("themeToggle").addEventListener("click", function () {
+        const current = document.documentElement.getAttribute("data-theme");
+        const next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("fittrack-theme", next);
+    });
+
+    const mobileToggle = document.getElementById("mobileToggle");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+    mobileToggle.addEventListener("click", function () {
+        sidebar.classList.toggle("open");
+        sidebarOverlay.classList.toggle("active");
+    });
+
+    sidebarOverlay.addEventListener("click", function () {
+        sidebar.classList.remove("open");
+        sidebarOverlay.classList.remove("active");
+    });
+</script>
+
+</body>
+</html>

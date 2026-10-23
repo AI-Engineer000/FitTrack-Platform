@@ -1,0 +1,941 @@
+{% load static %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in — FitTrack</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        (function () {
+            const saved = localStorage.getItem("fittrack-theme") || "light";
+            document.documentElement.setAttribute("data-theme", saved);
+        })();
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --green: #1f6b48;
+            --green-dark: #164a32;
+            --green-soft: #e8f0eb;
+            --green-glow: rgba(31, 107, 72, 0.15);
+            --coral: #e07a3f;
+            --coral-soft: #fbead9;
+            --coral-glow: rgba(224, 122, 63, 0.2);
+            --cream: #faf8f3;
+            --ink: #14181a;
+            --ink-soft: #4a524d;
+            --ink-muted: #8b928c;
+            --border: #e3e6e2;
+            --bg: #ffffff;
+            --surface: #ffffff;
+            --error-bg: #fff1ef;
+            --error-text: #b43d32;
+            --shadow-sm: 0 1px 3px rgba(20, 24, 26, 0.04);
+            --shadow-md: 0 4px 12px rgba(20, 24, 26, 0.06);
+            --shadow-lg: 0 12px 32px rgba(20, 24, 26, 0.08);
+        }
+
+        [data-theme="dark"] {
+            --green: #34d399;
+            --green-dark: #10b981;
+            --green-soft: rgba(52, 211, 153, 0.12);
+            --green-glow: rgba(52, 211, 153, 0.25);
+            --coral: #fb923c;
+            --coral-soft: rgba(251, 146, 60, 0.15);
+            --coral-glow: rgba(251, 146, 60, 0.3);
+            --cream: #0f1411;
+            --ink: #f5f7f5;
+            --ink-soft: #b8beba;
+            --ink-muted: #7a827d;
+            --border: #232a26;
+            --bg: #0a0d0b;
+            --surface: #141a16;
+            --error-bg: rgba(180, 61, 50, 0.15);
+            --error-text: #f87171;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            min-height: 100vh;
+            font-size: 15px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        h1, h2, h3 {
+            font-family: "Barlow Condensed", sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.015em;
+        }
+
+        a { color: inherit; }
+
+        .page {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            position: relative;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 100;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.08);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .theme-toggle svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--ink);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .theme-toggle .sun-icon { display: none; }
+        .theme-toggle .moon-icon { display: block; }
+        [data-theme="dark"] .theme-toggle .sun-icon { display: block; }
+        [data-theme="dark"] .theme-toggle .moon-icon { display: none; }
+
+        .brand-panel {
+            position: relative;
+            background: var(--cream);
+            padding: 48px 56px 40px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background 0.3s ease;
+        }
+
+        .brand-panel::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle, var(--green-glow) 1px, transparent 1px);
+            background-size: 28px 28px;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .brand-panel::after {
+            content: "";
+            position: absolute;
+            width: 480px;
+            height: 480px;
+            border-radius: 50%;
+            right: -220px;
+            bottom: -200px;
+            background: radial-gradient(circle, var(--coral-glow) 0%, transparent 70%);
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .brand-logo {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: fit-content;
+            font-family: "Barlow Condensed", sans-serif;
+            font-size: 1.55rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            color: var(--ink);
+        }
+
+        .brand-logo-dot {
+            width: 11px;
+            height: 11px;
+            background: var(--green);
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .brand-logo-dot::after {
+            content: "";
+            position: absolute;
+            inset: -4px;
+            border: 1.5px solid var(--green);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes ping {
+            75%, 100% { transform: scale(1.8); opacity: 0; }
+        }
+
+        .brand-logo em { font-style: normal; color: var(--green); }
+
+        .brand-content {
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 570px;
+            padding: 40px 0;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: fit-content;
+            padding: 7px 14px;
+            margin-bottom: 26px;
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            background: var(--surface);
+            color: var(--green);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .eyebrow-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        .brand-title {
+            font-size: clamp(3rem, 4.5vw, 4.4rem);
+            line-height: 0.94;
+            letter-spacing: -0.035em;
+            color: var(--ink);
+            margin-bottom: 22px;
+        }
+
+        .brand-title span {
+            color: var(--green);
+            position: relative;
+            display: inline-block;
+        }
+
+        .brand-title span::after {
+            content: "";
+            position: absolute;
+            left: -4px;
+            right: -4px;
+            bottom: 6px;
+            height: 10px;
+            background: var(--coral-soft);
+            border-radius: 5px;
+            transform: rotate(-1.5deg);
+            z-index: -1;
+        }
+
+        .brand-description {
+            max-width: 460px;
+            color: var(--ink-soft);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin-bottom: 28px;
+        }
+
+        .athlete-visual {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            height: 180px;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .athlete-svg {
+            width: 140px;
+            height: 180px;
+            flex-shrink: 0;
+            filter: drop-shadow(0 8px 20px rgba(31, 107, 72, 0.15));
+        }
+
+        .keypoint {
+            animation: keypoint-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes keypoint-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .live-stat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+
+        .stat-row:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--green);
+        }
+
+        .stat-label-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.green {
+            background: var(--green-soft);
+            color: var(--green);
+        }
+
+        .stat-icon.coral {
+            background: var(--coral-soft);
+            color: var(--coral);
+        }
+
+        .stat-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--ink-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .stat-value {
+            font-family: "Barlow Condensed", sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .stat-value span {
+            font-size: 0.72rem;
+            color: var(--ink-muted);
+            font-weight: 500;
+            margin-left: 2px;
+        }
+
+        .feature-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 13px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--ink-soft);
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .feature:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--green);
+        }
+
+        .feature-check {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--green-soft);
+            color: var(--green);
+            font-size: 0.65rem;
+            font-weight: 700;
+        }
+
+        .brand-footer {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 22px;
+            border-top: 1px solid var(--border);
+        }
+
+        .brand-footer-text {
+            color: var(--ink-muted);
+            font-size: 0.75rem;
+        }
+
+        .footer-status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--ink-muted);
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .form-panel {
+            position: relative;
+            background: var(--bg);
+            padding: 50px 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: background 0.3s ease;
+        }
+
+        .form-panel::before {
+            content: "";
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            top: -100px;
+            right: -80px;
+            border-radius: 50%;
+            background: var(--green-soft);
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .form-panel::after {
+            content: "";
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            bottom: 50px;
+            right: 70px;
+            border: 2px solid var(--coral);
+            border-radius: 50%;
+            opacity: 0.15;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 410px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .form-header { margin-bottom: 28px; }
+
+        .form-header h1 {
+            font-size: 2.5rem;
+            line-height: 1;
+            letter-spacing: -0.025em;
+            margin-bottom: 10px;
+            color: var(--ink);
+        }
+
+        .form-subtitle {
+            color: var(--ink-muted);
+            font-size: 0.88rem;
+        }
+
+        .error-message {
+            margin-bottom: 18px;
+            padding: 11px 14px;
+            background: var(--error-bg);
+            color: var(--error-text);
+            border-left: 3px solid var(--error-text);
+            border-radius: 7px;
+            font-size: 0.8rem;
+        }
+
+        .google-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--ink);
+            font-size: 0.88rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.18s ease;
+        }
+
+        .google-btn:hover {
+            border-color: var(--green);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px var(--green-glow);
+        }
+
+        .google-icon { width: 18px; height: 18px; flex-shrink: 0; }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            margin: 23px 0;
+            color: var(--ink-muted);
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .divider::before, .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .form-group { margin-bottom: 18px; }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 7px;
+            color: var(--ink);
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .input-wrap { position: relative; }
+
+        .input-wrap input {
+            width: 100%;
+            padding: 12px 15px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--ink);
+            font-family: "Inter", sans-serif;
+            font-size: 0.88rem;
+            outline: none;
+            transition: all 0.18s ease;
+        }
+
+        .input-wrap input:hover { border-color: var(--ink-muted); }
+
+        .input-wrap input:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 4px var(--green-glow);
+        }
+
+        .input-wrap input::placeholder {
+            color: var(--ink-muted);
+            opacity: 0.7;
+        }
+
+        .form-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin: 4px 0 22px;
+        }
+
+        .checkbox-wrap {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .checkbox-wrap input {
+            width: 15px;
+            height: 15px;
+            accent-color: var(--green);
+            cursor: pointer;
+        }
+
+        .checkbox-wrap label {
+            color: var(--ink-soft);
+            font-size: 0.78rem;
+            cursor: pointer;
+        }
+
+        .forgot-link {
+            color: var(--green);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .forgot-link:hover { text-decoration: underline; }
+
+        .submit-btn {
+            width: 100%;
+            padding: 13px 16px;
+            border: none;
+            border-radius: 10px;
+            background: var(--green);
+            color: #fff;
+            font-family: "Inter", sans-serif;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 3px 10px var(--green-glow);
+            transition: all 0.18s ease;
+        }
+
+        .submit-btn:hover {
+            background: var(--green-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px var(--green-glow);
+        }
+
+        .form-footer {
+            margin-top: 26px;
+            text-align: center;
+            color: var(--ink-muted);
+            font-size: 0.8rem;
+        }
+
+        .form-footer a {
+            color: var(--green);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .form-footer a:hover { text-decoration: underline; }
+
+        .security-note {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 22px;
+            color: var(--ink-muted);
+            font-size: 0.68rem;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 1050px) {
+            .brand-panel { padding-left: 42px; padding-right: 42px; }
+            .form-panel { padding-left: 42px; padding-right: 42px; }
+            .brand-title { font-size: 3.5rem; }
+            .athlete-visual { height: 160px; }
+            .athlete-svg { width: 120px; height: 160px; }
+        }
+
+        @media (max-width: 850px) {
+            .page { grid-template-columns: 1fr; }
+            .brand-panel { min-height: auto; padding: 32px 28px; }
+            .brand-content { padding: 40px 0 30px; }
+            .brand-title { font-size: 3rem; }
+            .athlete-visual { height: 140px; }
+            .athlete-svg { width: 100px; height: 140px; }
+            .brand-footer { display: none; }
+            .form-panel { min-height: auto; padding: 50px 28px 60px; }
+            .theme-toggle { top: 16px; right: 16px; width: 38px; height: 38px; }
+        }
+
+        @media (max-width: 500px) {
+            .brand-panel { padding: 24px 20px; }
+            .brand-content { padding: 30px 0 25px; }
+            .brand-title { font-size: 2.4rem; }
+            .brand-description { font-size: 0.88rem; }
+            .athlete-visual { flex-direction: column; height: auto; gap: 14px; }
+            .athlete-svg { width: 90px; height: 120px; }
+            .feature-strip { gap: 7px; }
+            .feature { padding: 7px 10px; font-size: 0.7rem; }
+            .form-panel { padding: 40px 20px 50px; }
+            .form-header h1 { font-size: 2.1rem; }
+            .form-row { align-items: flex-start; flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+    <svg class="moon-icon" viewBox="0 0 24 24">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+    <svg class="sun-icon" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+    </svg>
+</button>
+
+<div class="page">
+
+    <section class="brand-panel">
+        <div class="brand-logo">
+            <span class="brand-logo-dot"></span>
+            Fit<em>Track</em>
+        </div>
+
+        <div class="brand-content">
+            <div class="eyebrow">
+                <span class="eyebrow-dot"></span>
+                AI-powered fitness assessment
+            </div>
+
+            <h1 class="brand-title">
+                Coaching<br>
+                that actually<br>
+                <span>measures up.</span>
+            </h1>
+
+            <p class="brand-description">
+                Assess athlete performance using real-time pose detection
+                and measurable fitness data.
+            </p>
+
+            <div class="athlete-visual">
+                <svg class="athlete-svg" viewBox="0 0 140 180" xmlns="http://www.w3.org/2000/svg">
+                    <g fill="none" stroke="currentColor" stroke-width="3.5"
+                       stroke-linecap="round" stroke-linejoin="round"
+                       style="color: var(--green);">
+                        <circle cx="70" cy="28" r="14"/>
+                        <line x1="70" y1="42" x2="70" y2="58"/>
+                        <line x1="42" y1="58" x2="98" y2="58"/>
+                        <polyline points="42,58 30,82 42,100"/>
+                        <polyline points="98,58 118,72 108,92"/>
+                        <line x1="70" y1="58" x2="70" y2="112"/>
+                        <polyline points="70,112 50,132 60,158"/>
+                        <polyline points="70,112 100,130 95,162"/>
+                    </g>
+
+                    <g fill="var(--coral)">
+                        <circle class="keypoint" cx="70" cy="28" r="3.5" style="animation-delay: 0s;"/>
+                        <circle class="keypoint" cx="42" cy="58" r="3.5" style="animation-delay: 0.15s;"/>
+                        <circle class="keypoint" cx="98" cy="58" r="3.5" style="animation-delay: 0.3s;"/>
+                        <circle class="keypoint" cx="30" cy="82" r="3.5" style="animation-delay: 0.45s;"/>
+                        <circle class="keypoint" cx="118" cy="72" r="3.5" style="animation-delay: 0.6s;"/>
+                        <circle class="keypoint" cx="70" cy="112" r="3.5" style="animation-delay: 0.75s;"/>
+                        <circle class="keypoint" cx="50" cy="132" r="3.5" style="animation-delay: 0.9s;"/>
+                        <circle class="keypoint" cx="100" cy="130" r="3.5" style="animation-delay: 1.05s;"/>
+                        <circle class="keypoint" cx="60" cy="158" r="3.5" style="animation-delay: 1.2s;"/>
+                        <circle class="keypoint" cx="95" cy="162" r="3.5" style="animation-delay: 1.35s;"/>
+                    </g>
+                </svg>
+
+                <div class="live-stat">
+                    <div class="stat-row">
+                        <div class="stat-label-group">
+                            <div class="stat-icon green">🎯</div>
+                            <div class="stat-label">Sprint time</div>
+                        </div>
+                        <div class="stat-value">4.21<span>s</span></div>
+                    </div>
+
+                    <div class="stat-row">
+                        <div class="stat-label-group">
+                            <div class="stat-icon coral">📊</div>
+                            <div class="stat-label">Vertical jump</div>
+                        </div>
+                        <div class="stat-value">47.5<span>cm</span></div>
+                    </div>
+
+                    <div class="stat-row">
+                        <div class="stat-label-group">
+                            <div class="stat-icon green">⚡</div>
+                            <div class="stat-label">Progress</div>
+                        </div>
+                        <div class="stat-value">+12<span>%</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-strip">
+                <div class="feature">
+                    <span class="feature-check">✓</span>
+                    10 AI Tests
+                </div>
+                <div class="feature">
+                    <span class="feature-check">✓</span>
+                    Pose Detection
+                </div>
+                <div class="feature">
+                    <span class="feature-check">✓</span>
+                    Progress Tracking
+                </div>
+            </div>
+        </div>
+
+        <div class="brand-footer">
+            <div class="brand-footer-text">
+                Built for coaches, athletes & sports teams
+            </div>
+            <div class="footer-status">
+                <span class="status-dot"></span>
+                System online
+            </div>
+        </div>
+    </section>
+
+    <section class="form-panel">
+        <div class="form-container">
+
+            <div class="form-header">
+                <h1>Welcome back</h1>
+                <p class="form-subtitle">
+                    Sign in to continue to your FitTrack dashboard.
+                </p>
+            </div>
+
+            {% if form.non_field_errors %}
+                <div class="error-message">
+                    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+
+            <a href="{% provider_login_url 'google' %}" class="google-btn">
+                <svg class="google-icon" viewBox="0 0 48 48" aria-hidden="true">
+                    <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.3 17.7 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 2.9-2.2 5.4-4.7 7.1l7.3 5.7c4.3-3.9 6.8-9.7 6.8-16.4z"/>
+                    <path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.3.8-4.7l-7.9-6.1C.9 16.6 0 20.2 0 24s.9 7.4 2.6 10.8l7.9-6.1z"/>
+                    <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.3-5.7c-2.1 1.4-4.8 2.2-8.6 2.2-6.3 0-11.6-3.8-13.5-9.1l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/>
+                </svg>
+                Continue with Google
+            </a>
+
+            <div class="divider">or</div>
+
+            <form method="post" action="{% url 'account_login' %}">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="id_login">Email or username</label>
+                    <div class="input-wrap">
+                        <input
+                            type="text"
+                            name="login"
+                            id="id_login"
+                            placeholder="you@example.com"
+                            autocomplete="username"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_password">Password</label>
+                    <div class="input-wrap">
+                        <input
+                            type="password"
+                            name="password"
+                            id="id_password"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="checkbox-wrap">
+                        <input type="checkbox" name="remember" id="id_remember">
+                        <label for="id_remember">Remember me</label>
+                    </div>
+                    <a href="{% url 'account_reset_password' %}" class="forgot-link">
+                        Forgot password?
+                    </a>
+                </div>
+
+                <button type="submit" class="submit-btn">Sign in</button>
+            </form>
+
+            <div class="form-footer">
+                New to FitTrack?
+                <a href="{% url 'account_signup' %}">Create an account</a>
+            </div>
+
+            <div class="security-note">
+                <span>🔒</span>
+                Your account information is securely protected.
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<script>
+    document.getElementById("themeToggle").addEventListener("click", function () {
+        const current = document.documentElement.getAttribute("data-theme");
+        const next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("fittrack-theme", next);
+    });
+</script>
+
+</body>
+</html>

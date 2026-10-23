@@ -1,0 +1,593 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ exercise_name }} — Live Assessment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'dashboard.css' %}">
+    <script>
+        (function () {
+            const saved = localStorage.getItem("fittrack-theme") || "light";
+            document.documentElement.setAttribute("data-theme", saved);
+        })();
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --green: #1f6b48;
+            --green-dark: #164a32;
+            --green-soft: #e8f0eb;
+            --green-glow: rgba(31, 107, 72, 0.15);
+            --coral: #e07a3f;
+            --coral-soft: #fbead9;
+            --cream: #faf8f3;
+            --ink: #14181a;
+            --ink-soft: #4a524d;
+            --ink-muted: #8b928c;
+            --border: #e3e6e2;
+            --bg: #ffffff;
+            --surface: #ffffff;
+            --surface-2: #f7f5ef;
+            --shadow-md: 0 4px 12px rgba(20, 24, 26, 0.06);
+            --shadow-lg: 0 12px 32px rgba(20, 24, 26, 0.08);
+        }
+
+        [data-theme="dark"] {
+            --green: #34d399;
+            --green-dark: #10b981;
+            --green-soft: rgba(52, 211, 153, 0.12);
+            --green-glow: rgba(52, 211, 153, 0.25);
+            --coral: #fb923c;
+            --coral-soft: rgba(251, 146, 60, 0.15);
+            --cream: #0f1411;
+            --ink: #f5f7f5;
+            --ink-soft: #b8beba;
+            --ink-muted: #7a827d;
+            --border: #232a26;
+            --bg: #0a0d0b;
+            --surface: #141a16;
+            --surface-2: #1a201c;
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            font-family: "Inter", sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        h1, h2, h3 { font-family: "Barlow Condensed", sans-serif; font-weight: 700; }
+        a { color: inherit; text-decoration: none; }
+
+        .live-wrap {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .live-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .page-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--ink-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 4px;
+        }
+
+        .live-header h1 {
+            font-size: 2rem;
+            color: var(--ink);
+        }
+
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 18px;
+            border-radius: 10px;
+            font-family: "Inter", sans-serif;
+            font-size: 0.86rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.18s;
+            border: none;
+            text-decoration: none;
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--ink);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover { border-color: var(--green); }
+
+        .btn-primary {
+            background: var(--green);
+            color: #fff;
+            box-shadow: 0 3px 10px var(--green-glow);
+        }
+
+        .btn-primary:hover { background: var(--green-dark); transform: translateY(-1px); }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .live-grid {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 20px;
+        }
+
+        .video-wrap {
+            position: relative;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            aspect-ratio: 4/3;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        #overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            background: rgba(31, 107, 72, 0.9);
+            color: #fff;
+            backdrop-filter: blur(10px);
+        }
+
+        .metrics-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .athlete-info {
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .athlete-name {
+            font-family: "Barlow Condensed", sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .athlete-meta {
+            font-size: 0.82rem;
+            color: var(--ink-muted);
+            margin-top: 3px;
+        }
+
+        .camera-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .camera-selector label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--ink-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .camera-selector select {
+            padding: 10px 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--ink);
+            font-family: "Inter", sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .metric-card {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .metric-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--ink-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .metric-value {
+            font-family: "Barlow Condensed", sans-serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--green);
+        }
+
+        .metric-value.coral { color: var(--coral); }
+
+        .metric-value small {
+            font-size: 0.9rem;
+            color: var(--ink-muted);
+            font-weight: 500;
+            margin-left: 4px;
+        }
+
+        .action-row { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+
+        @media (max-width: 1050px) {
+            .live-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="live-wrap">
+
+    <header class="live-header">
+        <div>
+            <div class="page-label">Live Assessment</div>
+            <h1>{{ exercise_name }}</h1>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" id="themeToggle">Theme</button>
+            <a href="{% url 'dashboard:exercise_selection' athlete.id %}" class="btn btn-secondary">← Back</a>
+        </div>
+    </header>
+
+    <div class="live-grid">
+
+        <div class="video-wrap">
+            <video id="video" autoplay playsinline muted></video>
+            <canvas id="overlay"></canvas>
+            <div class="status-badge" id="statusBadge">Initializing camera…</div>
+        </div>
+
+        <div class="metrics-panel">
+
+            <div class="athlete-info">
+                <div class="athlete-name">{{ athlete.name }}</div>
+                <div class="athlete-meta">{{ athlete.athlete_id }} · {{ athlete.sport|default:"General" }}</div>
+            </div>
+
+            <div class="camera-selector">
+                <label for="cameraSelect">Camera</label>
+                <select id="cameraSelect">
+                    <option>Loading cameras…</option>
+                </select>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Current</div>
+                <div class="metric-value" id="currentValue">—</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Best</div>
+                <div class="metric-value coral" id="maxValue">—</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">State</div>
+                <div class="metric-value" id="stateLabel">—</div>
+            </div>
+
+            <div class="action-row">
+                <button class="btn btn-primary" id="saveBtn">
+                    Save Assessment
+                </button>
+                <button class="btn btn-secondary" id="resetBtn" type="button">
+                    Reset
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    const video = document.getElementById("video");
+    const overlay = document.getElementById("overlay");
+    const cameraSelect = document.getElementById("cameraSelect");
+    const currentValue = document.getElementById("currentValue");
+    const maxValue = document.getElementById("maxValue");
+    const stateLabel = document.getElementById("stateLabel");
+    const saveBtn = document.getElementById("saveBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const statusBadge = document.getElementById("statusBadge");
+
+    const ATHLETE_ID = "{{ athlete.athlete_id }}";
+    const EXERCISE_SLUG = "{{ exercise_slug }}";
+    const CSRF_TOKEN = "{{ csrf_token }}";
+    const CHECK_TASK_URL = "{% url 'dashboard:check_task' 'TASK_ID' %}";
+
+    let analysisState = {};
+    let stream = null;
+    let sendTimer = null;
+    let busy = false;
+
+    // Theme
+    document.getElementById("themeToggle").addEventListener("click", function () {
+        const current = document.documentElement.getAttribute("data-theme");
+        const next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("fittrack-theme", next);
+    });
+
+    // Enumerate cameras — permission must be granted first or labels stay empty
+    async function loadCameras() {
+        try {
+            const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const cameras = devices.filter(d => d.kind === "videoinput");
+
+            tempStream.getTracks().forEach(t => t.stop());
+
+            cameraSelect.innerHTML = "";
+            if (cameras.length === 0) {
+                cameraSelect.innerHTML = "<option>No camera found</option>";
+                return;
+            }
+
+            cameras.forEach((cam, i) => {
+                const opt = document.createElement("option");
+                opt.value = cam.deviceId;
+                opt.textContent = cam.label || `Camera ${i + 1}`;
+                cameraSelect.appendChild(opt);
+            });
+
+            startCamera(cameras[0].deviceId);
+        } catch (err) {
+            statusBadge.textContent = "Camera permission denied";
+            statusBadge.style.background = "rgba(180, 61, 50, 0.9)";
+            console.error("Camera error:", err);
+        }
+    }
+
+    async function startCamera(deviceId) {
+        if (stream) {
+            stream.getTracks().forEach(t => t.stop());
+        }
+
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    deviceId: deviceId ? { exact: deviceId } : undefined,
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                }
+            });
+            video.srcObject = stream;
+            statusBadge.textContent = "Live";
+            statusBadge.style.background = "rgba(31, 107, 72, 0.9)";
+        } catch (err) {
+            statusBadge.textContent = "Camera error: " + err.message;
+            statusBadge.style.background = "rgba(180, 61, 50, 0.9)";
+        }
+    }
+
+    cameraSelect.addEventListener("change", () => startCamera(cameraSelect.value));
+
+    // Draw keypoints on canvas
+    function drawKeypoints(keypoints) {
+        const ctx = overlay.getContext("2d");
+        overlay.width = video.videoWidth || 640;
+        overlay.height = video.videoHeight || 480;
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+        if (!keypoints || keypoints.length === 0) return;
+
+        const CONNECTIONS = [
+            [5, 6], [5, 7], [7, 9], [6, 8], [8, 10],
+            [5, 11], [6, 12], [11, 12],
+            [11, 13], [13, 15], [12, 14], [14, 16]
+        ];
+
+        ctx.strokeStyle = "#1f6b48";
+        ctx.lineWidth = 3;
+        CONNECTIONS.forEach(([a, b]) => {
+            const kpA = keypoints[a], kpB = keypoints[b];
+            if (kpA && kpB && kpA[2] > 0.5 && kpB[2] > 0.5) {
+                ctx.beginPath();
+                ctx.moveTo(kpA[0], kpA[1]);
+                ctx.lineTo(kpB[0], kpB[1]);
+                ctx.stroke();
+            }
+        });
+
+        ctx.fillStyle = "#e07a3f";
+        keypoints.forEach(kp => {
+            if (kp[2] > 0.5) {
+                ctx.beginPath();
+                ctx.arc(kp[0], kp[1], 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
+    }
+
+    // Send frame to backend
+    async function sendFrame() {
+        if (busy || video.videoWidth === 0) return;
+        busy = true;
+
+        try {
+            const tmp = document.createElement("canvas");
+            tmp.width = video.videoWidth;
+            tmp.height = video.videoHeight;
+            const ctx = tmp.getContext("2d");
+            ctx.drawImage(video, 0, 0);
+
+            const dataUrl = tmp.toDataURL("image/jpeg", 0.7);
+
+            const form = new FormData();
+            form.append("frame", dataUrl);
+            form.append("exercise", EXERCISE_SLUG);
+            form.append("state", JSON.stringify(analysisState));
+            form.append("athlete_id", ATHLETE_ID);
+
+            const res = await fetch("{% url 'dashboard:analyze_frame' %}", {
+                method: "POST",
+                body: form,
+                headers: { "X-CSRFToken": CSRF_TOKEN }
+            });
+
+            const data = await res.json();
+
+            if (data.task_id) {
+                const result = await pollTask(data.task_id);
+                applyAnalysisResult(result);
+            } else {
+                applyAnalysisResult(data);
+            }
+        } catch (err) {
+            console.error("Frame error:", err);
+        } finally {
+            busy = false;
+        }
+    }
+
+    async function pollTask(taskId) {
+        const maxAttempts = 40;
+        const taskUrl = CHECK_TASK_URL.replace("TASK_ID", encodeURIComponent(taskId));
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            const response = await fetch(taskUrl);
+            const data = await response.json();
+            if (!response.ok || data.status === "error") {
+                throw new Error(data.error || "Task polling failed");
+            }
+            if (data.status === "complete") {
+                return data.result;
+            }
+            await new Promise(resolve => setTimeout(resolve, 150));
+        }
+
+        throw new Error("Frame analysis timed out");
+    }
+
+    function applyAnalysisResult(data) {
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
+
+        if (data.analysis && data.analysis.state) {
+            analysisState = data.analysis.state;
+        }
+
+        if (data.analysis && data.analysis.valid) {
+            currentValue.innerHTML = (data.analysis.current_value ?? "—")
+                + (data.analysis.unit ? ` <small>${data.analysis.unit}</small>` : "");
+            maxValue.innerHTML = (data.analysis.max_value ?? "—")
+                + (data.analysis.unit ? ` <small>${data.analysis.unit}</small>` : "");
+            stateLabel.textContent = data.analysis.state_label || "—";
+        }
+
+        if (data.keypoints) {
+            drawKeypoints(data.keypoints);
+        }
+    }
+
+    saveBtn.addEventListener("click", async function () {
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving…";
+
+        try {
+            const form = new FormData();
+            form.append("athlete_id", ATHLETE_ID);
+            form.append("exercise", EXERCISE_SLUG);
+            form.append("state", JSON.stringify(analysisState));
+
+            const res = await fetch("{% url 'dashboard:save_live_assessment' %}", {
+                method: "POST",
+                body: form,
+                headers: { "X-CSRFToken": CSRF_TOKEN }
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            } else {
+                alert("Save failed: " + (data.error || "Unknown error"));
+                saveBtn.disabled = false;
+                saveBtn.textContent = "Save Assessment";
+            }
+        } catch (err) {
+            alert("Save failed: " + err.message);
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Save Assessment";
+        }
+    });
+
+    resetBtn.addEventListener("click", function () {
+        analysisState = {};
+        currentValue.innerHTML = "—";
+        maxValue.innerHTML = "—";
+        stateLabel.textContent = "—";
+        statusBadge.textContent = "Reset";
+        statusBadge.style.background = "rgba(31, 107, 72, 0.9)";
+        setTimeout(() => {
+            statusBadge.textContent = "Live";
+        }, 1500);
+    });
+
+    // Start
+    loadCameras();
+    sendTimer = setInterval(sendFrame, 250); // 4 fps
+</script>
+
+</body>
+</html>

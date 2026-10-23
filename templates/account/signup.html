@@ -1,0 +1,858 @@
+{% load static %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create account — FitTrack</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        (function () {
+            const saved = localStorage.getItem("fittrack-theme") || "light";
+            document.documentElement.setAttribute("data-theme", saved);
+        })();
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --green: #1f6b48;
+            --green-dark: #164a32;
+            --green-soft: #e8f0eb;
+            --green-glow: rgba(31, 107, 72, 0.15);
+            --coral: #e07a3f;
+            --coral-soft: #fbead9;
+            --coral-glow: rgba(224, 122, 63, 0.2);
+            --cream: #faf8f3;
+            --ink: #14181a;
+            --ink-soft: #4a524d;
+            --ink-muted: #8b928c;
+            --border: #e3e6e2;
+            --bg: #ffffff;
+            --surface: #ffffff;
+            --error-bg: #fff1ef;
+            --error-text: #b43d32;
+            --shadow-sm: 0 1px 3px rgba(20, 24, 26, 0.04);
+            --shadow-md: 0 4px 12px rgba(20, 24, 26, 0.06);
+            --shadow-lg: 0 12px 32px rgba(20, 24, 26, 0.08);
+        }
+
+        [data-theme="dark"] {
+            --green: #34d399;
+            --green-dark: #10b981;
+            --green-soft: rgba(52, 211, 153, 0.12);
+            --green-glow: rgba(52, 211, 153, 0.25);
+            --coral: #fb923c;
+            --coral-soft: rgba(251, 146, 60, 0.15);
+            --coral-glow: rgba(251, 146, 60, 0.3);
+            --cream: #0f1411;
+            --ink: #f5f7f5;
+            --ink-soft: #b8beba;
+            --ink-muted: #7a827d;
+            --border: #232a26;
+            --bg: #0a0d0b;
+            --surface: #141a16;
+            --error-bg: rgba(180, 61, 50, 0.15);
+            --error-text: #f87171;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            min-height: 100vh;
+            font-size: 15px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        h1, h2, h3 {
+            font-family: "Barlow Condensed", sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.015em;
+        }
+
+        a { color: inherit; }
+
+        .page {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 0.95fr 1.05fr;
+            position: relative;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 100;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.08);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .theme-toggle svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--ink);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .theme-toggle .sun-icon { display: none; }
+        .theme-toggle .moon-icon { display: block; }
+        [data-theme="dark"] .theme-toggle .sun-icon { display: block; }
+        [data-theme="dark"] .theme-toggle .moon-icon { display: none; }
+
+        .form-panel {
+            position: relative;
+            background: var(--bg);
+            padding: 50px 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: background 0.3s ease;
+        }
+
+        .form-panel::before {
+            content: "";
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            top: -110px;
+            left: -90px;
+            border-radius: 50%;
+            background: var(--coral-soft);
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .form-panel::after {
+            content: "";
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            bottom: 50px;
+            left: 70px;
+            border: 2px solid var(--green);
+            border-radius: 50%;
+            opacity: 0.15;
+            pointer-events: none;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 420px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .form-header { margin-bottom: 26px; }
+
+        .form-header h1 {
+            font-size: 2.5rem;
+            line-height: 1;
+            letter-spacing: -0.025em;
+            margin-bottom: 10px;
+            color: var(--ink);
+        }
+
+        .form-subtitle {
+            color: var(--ink-muted);
+            font-size: 0.88rem;
+        }
+
+        .form-subtitle a {
+            color: var(--green);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .form-subtitle a:hover { text-decoration: underline; }
+
+        .error-message {
+            margin-bottom: 18px;
+            padding: 11px 14px;
+            background: var(--error-bg);
+            color: var(--error-text);
+            border-left: 3px solid var(--error-text);
+            border-radius: 7px;
+            font-size: 0.8rem;
+        }
+
+        .social-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+
+        .google-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--ink);
+            font-size: 0.88rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.18s ease;
+        }
+
+        .google-btn:hover {
+            border-color: var(--green);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px var(--green-glow);
+        }
+
+        .google-icon { width: 18px; height: 18px; flex-shrink: 0; }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            margin: 22px 0;
+            color: var(--ink-muted);
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .divider::before, .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .form-group { margin-bottom: 16px; }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 7px;
+            color: var(--ink);
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .input-wrap { position: relative; }
+
+        .input-wrap input {
+            width: 100%;
+            padding: 12px 15px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--ink);
+            font-family: "Inter", sans-serif;
+            font-size: 0.88rem;
+            outline: none;
+            transition: all 0.18s ease;
+        }
+
+        .input-wrap input:hover { border-color: var(--ink-muted); }
+
+        .input-wrap input:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 4px var(--green-glow);
+        }
+
+        .input-wrap input::placeholder {
+            color: var(--ink-muted);
+            opacity: 0.7;
+        }
+
+        .password-rules {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .password-rule {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--ink-muted);
+            font-size: 0.73rem;
+        }
+
+        .password-rule-dot {
+            width: 4px;
+            height: 4px;
+            background: var(--ink-muted);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .terms-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            margin: 18px 0 20px;
+            font-size: 0.78rem;
+            color: var(--ink-soft);
+            line-height: 1.5;
+        }
+
+        .terms-row input {
+            width: 15px;
+            height: 15px;
+            accent-color: var(--green);
+            cursor: pointer;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .terms-row label { cursor: pointer; }
+
+        .terms-row a {
+            color: var(--green);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .terms-row a:hover { text-decoration: underline; }
+
+        .submit-btn {
+            width: 100%;
+            padding: 13px 16px;
+            border: none;
+            border-radius: 10px;
+            background: var(--green);
+            color: #fff;
+            font-family: "Inter", sans-serif;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 3px 10px var(--green-glow);
+            transition: all 0.18s ease;
+        }
+
+        .submit-btn:hover {
+            background: var(--green-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px var(--green-glow);
+        }
+
+        .form-footer {
+            margin-top: 24px;
+            text-align: center;
+            color: var(--ink-muted);
+            font-size: 0.8rem;
+        }
+
+        .form-footer a {
+            color: var(--green);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .form-footer a:hover { text-decoration: underline; }
+
+        .brand-panel {
+            position: relative;
+            background: var(--cream);
+            padding: 48px 56px 40px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background 0.3s ease;
+        }
+
+        .brand-panel::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle, var(--green-glow) 1px, transparent 1px);
+            background-size: 28px 28px;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .brand-panel::after {
+            content: "";
+            position: absolute;
+            width: 480px;
+            height: 480px;
+            border-radius: 50%;
+            right: -220px;
+            bottom: -200px;
+            background: radial-gradient(circle, var(--coral-glow) 0%, transparent 70%);
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .brand-logo {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: fit-content;
+            font-family: "Barlow Condensed", sans-serif;
+            font-size: 1.55rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            color: var(--ink);
+        }
+
+        .brand-logo-dot {
+            width: 11px;
+            height: 11px;
+            background: var(--green);
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .brand-logo-dot::after {
+            content: "";
+            position: absolute;
+            inset: -4px;
+            border: 1.5px solid var(--green);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes ping {
+            75%, 100% { transform: scale(1.8); opacity: 0; }
+        }
+
+        .brand-logo em { font-style: normal; color: var(--green); }
+
+        .brand-content {
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 520px;
+            padding: 40px 0;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: fit-content;
+            padding: 7px 14px;
+            margin-bottom: 26px;
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            background: var(--surface);
+            color: var(--green);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .eyebrow-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        .brand-title {
+            font-size: clamp(2.8rem, 4.5vw, 4rem);
+            line-height: 0.95;
+            letter-spacing: -0.035em;
+            color: var(--ink);
+            margin-bottom: 22px;
+        }
+
+        .brand-title span {
+            color: var(--green);
+            position: relative;
+            display: inline-block;
+        }
+
+        .brand-title span::after {
+            content: "";
+            position: absolute;
+            left: -4px;
+            right: -4px;
+            bottom: 6px;
+            height: 10px;
+            background: var(--coral-soft);
+            border-radius: 5px;
+            transform: rotate(-1.5deg);
+            z-index: -1;
+        }
+
+        .brand-description {
+            max-width: 440px;
+            color: var(--ink-soft);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin-bottom: 30px;
+        }
+
+        .step-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            max-width: 440px;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 14px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .step:hover {
+            transform: translateX(4px);
+            border-color: var(--green);
+            box-shadow: var(--shadow-md);
+        }
+
+        .step-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-family: "Barlow Condensed", sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            background: var(--green-soft);
+            color: var(--green);
+        }
+
+        .step-num.coral {
+            background: var(--coral-soft);
+            color: var(--coral);
+        }
+
+        .step-text { flex: 1; }
+
+        .step-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 2px;
+        }
+
+        .step-desc {
+            font-size: 0.8rem;
+            color: var(--ink-muted);
+            line-height: 1.5;
+        }
+
+        .brand-footer {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 22px;
+            border-top: 1px solid var(--border);
+        }
+
+        .brand-footer-text {
+            color: var(--ink-muted);
+            font-size: 0.75rem;
+        }
+
+        .footer-status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--ink-muted);
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @media (max-width: 1050px) {
+            .brand-panel { padding-left: 42px; padding-right: 42px; }
+            .form-panel { padding-left: 42px; padding-right: 42px; }
+            .brand-title { font-size: 3.2rem; }
+        }
+
+        @media (max-width: 850px) {
+            .page { grid-template-columns: 1fr; }
+            .form-panel { order: 1; min-height: auto; padding: 50px 28px 40px; }
+            .brand-panel { order: 2; min-height: auto; padding: 40px 28px; }
+            .brand-content { padding: 20px 0; }
+            .brand-title { font-size: 2.8rem; }
+            .brand-footer { display: none; }
+            .theme-toggle { top: 16px; right: 16px; width: 38px; height: 38px; }
+        }
+
+        @media (max-width: 500px) {
+            .form-panel { padding: 40px 20px 30px; }
+            .form-header h1 { font-size: 2.1rem; }
+            .brand-panel { padding: 30px 20px; }
+            .brand-title { font-size: 2.2rem; }
+            .brand-description { font-size: 0.88rem; }
+            .step { padding: 12px 14px; gap: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+    <svg class="moon-icon" viewBox="0 0 24 24">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+    <svg class="sun-icon" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+    </svg>
+</button>
+
+<div class="page">
+
+    <section class="form-panel">
+        <div class="form-container">
+
+            <div class="form-header">
+                <h1>Create an account</h1>
+                <p class="form-subtitle">
+                    Already have an account?
+                    <a href="{% url 'account_login' %}">Sign in</a>
+                </p>
+            </div>
+
+            {% if form.non_field_errors %}
+                <div class="error-message">
+                    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="social-row">
+                <a href="{% provider_login_url 'google' %}" class="google-btn">
+                    <svg class="google-icon" viewBox="0 0 48 48" aria-hidden="true">
+                        <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.3 17.7 9.5 24 9.5z"/>
+                        <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 2.9-2.2 5.4-4.7 7.1l7.3 5.7c4.3-3.9 6.8-9.7 6.8-16.4z"/>
+                        <path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.3.8-4.7l-7.9-6.1C.9 16.6 0 20.2 0 24s.9 7.4 2.6 10.8l7.9-6.1z"/>
+                        <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.3-5.7c-2.1 1.4-4.8 2.2-8.6 2.2-6.3 0-11.6-3.8-13.5-9.1l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/>
+                    </svg>
+                    Sign up with Google
+                </a>
+            </div>
+
+            <div class="divider">or continue with email</div>
+
+            <form method="post" action="{% url 'account_signup' %}">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="id_email">Email address</label>
+                    <div class="input-wrap">
+                        <input
+                            type="email"
+                            name="email"
+                            id="id_email"
+                            placeholder="you@example.com"
+                            autocomplete="email"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_password1">Create a password</label>
+                    <div class="input-wrap">
+                        <input
+                            type="password"
+                            name="password1"
+                            id="id_password1"
+                            placeholder="Create a password"
+                            autocomplete="new-password"
+                            required
+                        >
+                    </div>
+                    <div class="password-rules">
+                        <div class="password-rule">
+                            <span class="password-rule-dot"></span>
+                            At least 8 characters
+                        </div>
+                        <div class="password-rule">
+                            <span class="password-rule-dot"></span>
+                            Not entirely numeric
+                        </div>
+                        <div class="password-rule">
+                            <span class="password-rule-dot"></span>
+                            Not too similar to your email
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="id_password2">Confirm password</label>
+                    <div class="input-wrap">
+                        <input
+                            type="password"
+                            name="password2"
+                            id="id_password2"
+                            placeholder="Repeat your password"
+                            autocomplete="new-password"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div class="terms-row">
+                    <input type="checkbox" id="terms" required>
+                    <label for="terms">
+                        I agree to the
+                        <a href="#">Terms of Service</a>
+                        and
+                        <a href="#">Privacy Policy</a>
+                    </label>
+                </div>
+
+                <button type="submit" class="submit-btn">Create account</button>
+            </form>
+
+            <div class="form-footer">
+                Already have an account?
+                <a href="{% url 'account_login' %}">Sign in</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="brand-panel">
+        <div class="brand-logo">
+            <span class="brand-logo-dot"></span>
+            Fit<em>Track</em>
+        </div>
+
+        <div class="brand-content">
+            <div class="eyebrow">
+                <span class="eyebrow-dot"></span>
+                Get started in 2 minutes
+            </div>
+
+            <h1 class="brand-title">
+                Start your<br>
+                coaching<br>
+                <span>journey today.</span>
+            </h1>
+
+            <p class="brand-description">
+                Join coaches who are replacing clipboards with real data.
+                Assess, track, and improve your athletes — all from one place.
+            </p>
+
+            <div class="step-list">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-text">
+                        <div class="step-title">Create your account</div>
+                        <div class="step-desc">
+                            Takes less than a minute — just email and password.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-num coral">2</div>
+                    <div class="step-text">
+                        <div class="step-title">Add your athletes</div>
+                        <div class="step-desc">
+                            Enter basic details for each athlete on your team.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-text">
+                        <div class="step-title">Run assessments</div>
+                        <div class="step-desc">
+                            Use your phone or webcam — get instant scores and reports.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="brand-footer">
+            <div class="brand-footer-text">
+                Free to use. No credit card required.
+            </div>
+            <div class="footer-status">
+                <span class="status-dot"></span>
+                Ready to start
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<script>
+    document.getElementById("themeToggle").addEventListener("click", function () {
+        const current = document.documentElement.getAttribute("data-theme");
+        const next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("fittrack-theme", next);
+    });
+</script>
+
+</body>
+</html>

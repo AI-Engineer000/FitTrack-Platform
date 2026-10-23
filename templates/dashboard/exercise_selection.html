@@ -1,0 +1,142 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Select Assessment — FitTrack</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'dashboard.css' %}">
+</head>
+<body>
+
+<div class="app-layout">
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <span class="brand-dot"></span>
+            <span>Fit<em>Track</em></span>
+        </div>
+        <div class="sidebar-label">FITNESS PLATFORM</div>
+
+        <nav class="nav-list">
+            <a href="{% url 'dashboard:trainer_dashboard' %}" class="nav-item">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                        <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                        <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+                        <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+                    </svg>
+                </span>
+                Dashboard
+            </a>
+            <a href="{% url 'dashboard:exercise_selection' %}" class="nav-item active">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="8" r="3.2"></circle>
+                        <path d="M5 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5"></path>
+                    </svg>
+                </span>
+                Assessments
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4 19V10"></path>
+                        <path d="M11 19V5"></path>
+                        <path d="M18 19v-7"></path>
+                    </svg>
+                </span>
+                Progress
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="7" r="3.5"></circle>
+                        <path d="M4.5 20c1-4 4-6 7.5-6s6.5 2 7.5 6"></path>
+                    </svg>
+                </span>
+                Profile
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="sidebar-profile">
+                <div class="avatar">{{ athlete.name|first|upper }}</div>
+                <div class="profile-details">
+                    <div class="profile-name">{{ athlete.name }}</div>
+                    <div class="profile-roll">{{ athlete.athlete_id }}</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <header class="topbar">
+            <div>
+                <div class="page-label">NEW ASSESSMENT</div>
+                <h1>Select Exercise</h1>
+            </div>
+            <div class="topbar-right">
+                <a href="{% url 'dashboard:trainer_dashboard' %}" class="btn-back">← Back</a>
+            </div>
+        </header>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <section class="exercise-selection-grid">
+
+            {% for ex in exercises %}
+            <div class="selection-card {% if not ex.is_active %}disabled{% endif %}">
+
+                <div class="selection-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 3v11M12 14l5-3M12 14l-5-3"></path>
+                        <path d="M4 21h16"></path>
+                    </svg>
+                </div>
+
+                <h3>{{ ex.name }}</h3>
+
+                {% if ex.latest %}
+                    <p class="last-score">
+                        Last: <b>{{ ex.latest.score|floatformat:0 }}/100</b>
+                        ({{ ex.latest.result }})
+                    </p>
+                {% else %}
+                    <p class="last-score muted">Not assessed yet</p>
+                {% endif %}
+
+{% if ex.manual_measurement %}
+    <a href="{% url 'dashboard:add_body_measurements' athlete.id %}" class="btn-run">
+        Enter Manually →
+    </a>
+{% elif ex.command %}
+    <a href="{% url 'dashboard:live_assessment' athlete.id ex.slug %}" class="btn-run">
+        Run →
+    </a>
+{% else %}
+    <button class="btn-run disabled" disabled>Coming Soon</button>
+{% endif %}
+
+            </div>
+            {% endfor %}
+
+        </section>
+
+    </main>
+
+</div>
+
+</body>
+</html>

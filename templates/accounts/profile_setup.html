@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Profile — FitTrack</title>
+    <link rel="stylesheet" href="{% static 'dashboard.css' %}">
+</head>
+<body class="auth-body">
+    <div class="setup-box">
+        <div class="brand"><span class="brand-dot"></span>FitTrack</div>
+
+        <h1>Finish your setup</h1>
+        <p class="subtitle">Just a few more details to get started</p>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="first_name">First Name</label>
+                <input id="first_name" type="text" name="first_name" value="{{ user.first_name }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="last_name">Last Name</label>
+                <input id="last_name" type="text" name="last_name" value="{{ user.last_name }}">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input id="email" type="email" value="{{ user.email }}" disabled>
+                <div class="field-hint">Email from Google — cannot be changed</div>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input id="phone" type="text" name="phone" placeholder="+91 98765 43210">
+            </div>
+
+            <div class="form-group">
+                <label for="organization">Organization</label>
+                <input id="organization" type="text" name="organization" placeholder="MITS Gwalior">
+            </div>
+
+            <button type="submit" class="submit-btn">Continue →</button>
+        </form>
+    </div>
+</body>
+</html>

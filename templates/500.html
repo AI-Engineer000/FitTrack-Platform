@@ -1,0 +1,345 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server error — FitTrack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        (function () {
+            const saved = localStorage.getItem("fittrack-theme") || "light";
+            document.documentElement.setAttribute("data-theme", saved);
+        })();
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --green: #1f6b48;
+            --green-dark: #164a32;
+            --green-soft: #e8f0eb;
+            --green-glow: rgba(31, 107, 72, 0.15);
+            --coral: #e07a3f;
+            --coral-soft: #fbead9;
+            --coral-glow: rgba(224, 122, 63, 0.2);
+            --cream: #faf8f3;
+            --ink: #14181a;
+            --ink-soft: #4a524d;
+            --ink-muted: #8b928c;
+            --border: #e3e6e2;
+            --bg: #ffffff;
+            --surface: #ffffff;
+            --shadow-sm: 0 1px 3px rgba(20, 24, 26, 0.04);
+            --shadow-md: 0 4px 12px rgba(20, 24, 26, 0.06);
+            --shadow-lg: 0 12px 32px rgba(20, 24, 26, 0.08);
+        }
+
+        [data-theme="dark"] {
+            --green: #34d399;
+            --green-dark: #10b981;
+            --green-soft: rgba(52, 211, 153, 0.12);
+            --green-glow: rgba(52, 211, 153, 0.25);
+            --coral: #fb923c;
+            --coral-soft: rgba(251, 146, 60, 0.15);
+            --coral-glow: rgba(251, 146, 60, 0.3);
+            --cream: #0f1411;
+            --ink: #f5f7f5;
+            --ink-soft: #b8beba;
+            --ink-muted: #7a827d;
+            --border: #232a26;
+            --bg: #0a0d0b;
+            --surface: #141a16;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            min-height: 100vh;
+            font-size: 15px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        h1, h2, h3 { font-family: "Barlow Condensed", sans-serif; font-weight: 700; letter-spacing: -0.015em; }
+        a { color: inherit; text-decoration: none; }
+
+        .page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px;
+            position: relative;
+            overflow: hidden;
+            background: var(--cream);
+        }
+
+        .page::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle, var(--coral-soft) 1px, transparent 1px);
+            background-size: 28px 28px;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .page::after {
+            content: "";
+            position: absolute;
+            width: 480px;
+            height: 480px;
+            border-radius: 50%;
+            right: -220px;
+            bottom: -200px;
+            background: radial-gradient(circle, var(--green-glow) 0%, transparent 70%);
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 100;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover { transform: scale(1.08); box-shadow: var(--shadow-lg); }
+
+        .theme-toggle svg { width: 18px; height: 18px; stroke: var(--ink); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        .theme-toggle .sun-icon { display: none; }
+        .theme-toggle .moon-icon { display: block; }
+        [data-theme="dark"] .theme-toggle .sun-icon { display: block; }
+        [data-theme="dark"] .theme-toggle .moon-icon { display: none; }
+
+        .error-card {
+            position: relative;
+            z-index: 2;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 56px 48px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: fit-content;
+            margin: 0 auto 32px;
+            font-family: "Barlow Condensed", sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .brand-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--green);
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .brand-dot::after {
+            content: "";
+            position: absolute;
+            inset: -4px;
+            border: 1.5px solid var(--green);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: ping 2s infinite;
+        }
+
+        @keyframes ping { 75%, 100% { transform: scale(1.8); opacity: 0; } }
+
+        .brand-logo em { font-style: normal; color: var(--green); }
+
+        .error-code {
+            font-family: "Barlow Condensed", sans-serif;
+            font-size: 7rem;
+            font-weight: 700;
+            color: var(--coral);
+            line-height: 1;
+            letter-spacing: -0.03em;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .error-code::after {
+            content: "";
+            position: absolute;
+            left: 20%;
+            right: 20%;
+            bottom: 12px;
+            height: 12px;
+            background: var(--green-soft);
+            border-radius: 6px;
+            transform: rotate(2deg);
+            z-index: -1;
+        }
+
+        .error-title {
+            font-size: 1.9rem;
+            color: var(--ink);
+            margin-bottom: 14px;
+            line-height: 1.1;
+        }
+
+        .error-message {
+            font-size: 0.92rem;
+            color: var(--ink-soft);
+            line-height: 1.65;
+            margin-bottom: 32px;
+            max-width: 360px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .error-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-family: "Inter", sans-serif;
+            font-size: 0.86rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.18s;
+            text-decoration: none;
+            border: none;
+        }
+
+        .btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .btn-primary {
+            background: var(--green);
+            color: #fff;
+            box-shadow: 0 3px 10px var(--green-glow);
+        }
+
+        .btn-primary:hover {
+            background: var(--green-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px var(--green-glow);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--ink);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover { border-color: var(--green); }
+
+        @media (max-width: 500px) {
+            .error-card { padding: 40px 28px; }
+            .error-code { font-size: 5rem; }
+            .error-title { font-size: 1.5rem; }
+            .theme-toggle { top: 16px; right: 16px; width: 38px; height: 38px; }
+        }
+    </style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+    <svg class="moon-icon" viewBox="0 0 24 24">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+    <svg class="sun-icon" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+    </svg>
+</button>
+
+<div class="page">
+    <div class="error-card">
+        <div class="brand-logo">
+            <span class="brand-dot"></span>
+            Fit<em>Track</em>
+        </div>
+
+        <div class="error-code">500</div>
+
+        <h1 class="error-title">Something went wrong</h1>
+
+        <p class="error-message">
+            Our server encountered an unexpected issue. Please try again in a moment. If the problem persists, contact support.
+        </p>
+
+        <div class="error-actions">
+            <a href="/" class="btn btn-primary">
+                <svg viewBox="0 0 24 24">
+                    <path d="M3 12l9-9 9 9"/>
+                    <path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/>
+                </svg>
+                Go to Dashboard
+            </a>
+            <a href="javascript:location.reload()" class="btn btn-secondary">
+                <svg viewBox="0 0 24 24">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+                Reload Page
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById("themeToggle").addEventListener("click", function () {
+        const current = document.documentElement.getAttribute("data-theme");
+        const next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("fittrack-theme", next);
+    });
+</script>
+
+</body>
+</html>

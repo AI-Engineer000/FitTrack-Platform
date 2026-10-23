@@ -1,0 +1,561 @@
+{% load static %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in — FitTrack</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --green: #1f6b48;
+    --green-dark: #164a32;
+    --green-soft: #e8f0eb;
+    --ink: #1a1d1b;
+    --ink-soft: #5a625c;
+    --ink-muted: #8a918a;
+    --border: #e5e7e3;
+    --bg: #f8f9f7;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: #fff;
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+h1, h2, h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+/* Split layout */
+.split-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 100vh;
+}
+
+/* Left side — branding */
+.brand-panel {
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+    padding: 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+}
+
+/* Decorative shapes */
+.brand-panel::before {
+    content: '';
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    top: -200px;
+    right: -200px;
+    pointer-events: none;
+}
+
+.brand-panel::after {
+    content: '';
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+    bottom: -100px;
+    left: -100px;
+    pointer-events: none;
+}
+
+.brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    position: relative;
+    z-index: 1;
+}
+
+.brand-logo-dot {
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.brand-logo em {
+    font-style: normal;
+    opacity: 0.9;
+}
+
+.brand-content {
+    position: relative;
+    z-index: 1;
+}
+
+.brand-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 20px;
+}
+
+.brand-heading {
+    font-size: 3rem;
+    line-height: 1.05;
+    margin-bottom: 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+}
+
+.brand-heading span {
+    opacity: 0.85;
+}
+
+.brand-description {
+    font-size: 0.95rem;
+    opacity: 0.8;
+    max-width: 380px;
+    line-height: 1.6;
+    margin-bottom: 40px;
+}
+
+.brand-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.brand-stat {
+    border-left: 2px solid rgba(255,255,255,0.3);
+    padding-left: 14px;
+}
+
+.brand-stat-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.brand-stat-label {
+    font-size: 0.72rem;
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* Right side — form */
+.form-panel {
+    padding: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+}
+
+.form-container {
+    width: 100%;
+    max-width: 400px;
+}
+
+.form-header {
+    margin-bottom: 32px;
+}
+
+.form-header h1 {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    color: var(--ink);
+}
+
+.form-subtitle {
+    color: var(--ink-muted);
+    font-size: 0.92rem;
+}
+
+/* Google button */
+.google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 13px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 0.92rem;
+    color: var(--ink);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+
+.google-btn:hover {
+    background: #f8f9f7;
+    border-color: #c6c9cb;
+}
+
+/* Divider */
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 24px 0;
+    color: var(--ink-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+/* Form */
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 8px;
+}
+
+.form-input-wrap {
+    position: relative;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.92rem;
+    color: var(--ink);
+    background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--green);
+    box-shadow: 0 0 0 4px rgba(31, 107, 72, 0.1);
+}
+
+.form-group input::placeholder {
+    color: var(--ink-muted);
+}
+
+/* Password with eye icon */
+.input-icon {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+}
+
+.input-icon:hover {
+    opacity: 1;
+}
+
+/* Form row (remember + forgot) */
+.form-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    font-size: 0.85rem;
+}
+
+.checkbox-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.checkbox-wrap input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--green);
+}
+
+.checkbox-wrap label {
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.forgot-link {
+    color: var(--green);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.forgot-link:hover {
+    text-decoration: underline;
+}
+
+/* Submit button */
+.submit-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.submit-btn:hover {
+    background: var(--green-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(31, 107, 72, 0.2);
+}
+
+/* Footer */
+.form-footer {
+    text-align: center;
+    margin-top: 28px;
+    font-size: 0.88rem;
+    color: var(--ink-muted);
+}
+
+.form-footer a {
+    color: var(--green);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.form-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Error messages */
+.error-message {
+    background: #fbe7e4;
+    color: #b23a2e;
+    padding: 11px 14px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    margin-bottom: 16px;
+    border-left: 3px solid #b23a2e;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .split-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .brand-panel {
+        padding: 32px 24px;
+        min-height: 240px;
+    }
+
+    .brand-heading {
+        font-size: 2rem;
+    }
+
+    .brand-stats {
+        display: none;
+    }
+
+    .form-panel {
+        padding: 32px 24px;
+    }
+}
+
+@media (max-width: 500px) {
+    .brand-panel {
+        padding: 24px 20px;
+        min-height: 180px;
+    }
+
+    .brand-heading {
+        font-size: 1.6rem;
+    }
+
+    .brand-description {
+        font-size: 0.85rem;
+        margin-bottom: 0;
+    }
+
+    .form-panel {
+        padding: 32px 20px;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="split-layout">
+
+    <!-- LEFT — BRANDING -->
+    <div class="brand-panel">
+        <div class="brand-logo">
+            <span class="brand-logo-dot"></span>
+            Fit<em>Track</em>
+        </div>
+
+        <div class="brand-content">
+            <div class="brand-eyebrow">AI-POWERED FITNESS</div>
+            <h1 class="brand-heading">
+                Assess.<br>
+                Analyze.<br>
+                <span>Improve.</span>
+            </h1>
+            <p class="brand-description">
+                The complete platform for AI-assisted athletic assessment. 
+                Track performance across 10 fitness tests with real-time 
+                pose detection.
+            </p>
+        </div>
+
+        <div class="brand-stats">
+            <div class="brand-stat">
+                <div class="brand-stat-value">10</div>
+                <div class="brand-stat-label">Tests</div>
+            </div>
+            <div class="brand-stat">
+                <div class="brand-stat-value">AI</div>
+                <div class="brand-stat-label">Powered</div>
+            </div>
+            <div class="brand-stat">
+                <div class="brand-stat-value">Live</div>
+                <div class="brand-stat-label">Feedback</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT — FORM -->
+    <div class="form-panel">
+        <div class="form-container">
+
+            <div class="form-header">
+                <h1>Welcome back</h1>
+                <p class="form-subtitle">Sign in to continue as a trainer</p>
+            </div>
+
+            {% if form.non_field_errors %}
+                <div class="error-message">
+                    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Google OAuth -->
+            <a href="{% provider_login_url 'google' %}" class="google-btn">
+                <svg width="18" height="18" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.3 17.7 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 2.9-2.2 5.4-4.7 7.1l7.3 5.7c4.3-3.9 6.8-9.7 6.8-16.4z"/>
+                    <path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.3.8-4.7l-7.9-6.1C.9 16.6 0 20.2 0 24s.9 7.4 2.6 10.8l7.9-6.1z"/>
+                    <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.3-5.7c-2.1 1.4-4.8 2.2-8.6 2.2-6.3 0-11.6-3.8-13.5-9.1l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/>
+                </svg>
+                Continue with Google
+            </a>
+
+            <div class="divider">or</div>
+
+            <form method="post" action="{% url 'account_login' %}">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="id_login">Email or username</label>
+                    <input 
+                        type="text" 
+                        name="login" 
+                        id="id_login" 
+                        placeholder="Enter your email" 
+                        required
+                        autocomplete="username"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="id_password">Password</label>
+                    <div class="form-input-wrap">
+                        <input 
+                            type="password" 
+                            name="password" 
+                            id="id_password" 
+                            placeholder="Enter your password" 
+                            required
+                            autocomplete="current-password"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="checkbox-wrap">
+                        <input type="checkbox" name="remember" id="id_remember">
+                        <label for="id_remember">Remember me</label>
+                    </div>
+                    <a href="{% url 'account_reset_password' %}" class="forgot-link">
+                        Forgot password?
+                    </a>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    Sign in
+                </button>
+            </form>
+
+            <div class="form-footer">
+                New to FitTrack? 
+                <a href="{% url 'account_signup' %}">Create an account</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,658 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FitTrack — Fitness Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'dashboard.css' %}">
+</head>
+<body>
+<div class="app-layout">
+
+    <!-- HAMBURGER MENU BUTTON -->
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation" onclick="toggleSidebar()" aria-expanded="true">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <!-- SIDEBAR OVERLAY -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <span class="brand-dot"></span>
+            <span>Fit<em>Track</em></span>
+        </div>
+
+        <div class="sidebar-label">
+            FITNESS PLATFORM
+        </div>
+
+        <nav class="nav-list">
+            <a href="#" class="nav-item active">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                        <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                        <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+                        <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+                    </svg>
+                </span>
+                Dashboard
+            </a>
+
+            <a href="#" class="nav-item">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="8" r="3.2"></circle>
+                        <path d="M5 20c0-4 3-6.5 7-6.5s7 2.5 7 6.5"></path>
+                    </svg>
+                </span>
+                Assessments
+            </a>
+
+            <a href="{% url 'dashboard:history' %}" class="nav-item">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4 19V10"></path>
+                        <path d="M11 19V5"></path>
+                        <path d="M18 19v-7"></path>
+                    </svg>
+                </span>
+                History
+            </a>
+
+            <a href="#" class="nav-item">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="7" r="3.5"></circle>
+                        <path d="M4.5 20c1-4 4-6 7.5-6s6.5 2 7.5 6"></path>
+                    </svg>
+                </span>
+                Profile
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="sidebar-profile">
+                <div class="avatar">
+                    {% if athlete %}{{ athlete.name|first|upper }}{% else %}A{% endif %}
+                </div>
+                <div class="profile-details">
+                    <div class="profile-name">
+                        {% if athlete %}{{ athlete.name }}{% else %}Athlete Name{% endif %}
+                    </div>
+                    <div class="profile-roll">
+                        {% if athlete %}{{ athlete.athlete_id }}{% else %}Roll No. —{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- =====================================================
+         MAIN CONTENT
+    ====================================================== -->
+    <main class="main-content">
+
+        <!-- TOP BAR -->
+        <header class="topbar">
+            <div>
+                <div class="page-label">
+                    FITNESS ASSESSMENT
+                </div>
+                <h1>Dashboard</h1>
+            </div>
+
+            <div class="topbar-right">
+                <div class="status-pill">
+                    <span class="status-dot"></span>
+                    Assessment active
+                </div>
+                <div class="top-avatar">
+                    {% if athlete %}{{ athlete.name|first|upper }}{% else %}A{% endif %}
+                </div>
+            </div>
+        </header>
+
+        <!-- =================================================
+             HERO
+        ================================================== -->
+        <section class="hero">
+            <div class="hero-lines"></div>
+
+            <div class="hero-left">
+                <div class="hero-avatar">
+                    {% if athlete %}{{ athlete.name|first|upper }}{% else %}A{% endif %}
+                </div>
+
+                <div class="hero-copy">
+                    <span class="hero-eyebrow">
+                        FITNESS ASSESSMENT
+                    </span>
+
+                    <h2>
+                        Welcome back, {% if athlete %}{{ athlete.name }}{% else %}Athlete{% endif %} 👋
+                    </h2>
+
+                    <p>
+                        Here's a quick overview of your latest fitness assessment.
+                    </p>
+
+                    <div class="hero-meta">
+                        <span>
+                            <strong>Last assessment:</strong>
+                            {% if assessments %}
+                                {{ assessments.0.created_at|date:"d M Y" }}
+                            {% else %}
+                                No assessment yet
+                            {% endif %}
+                        </span>
+                        <span class="meta-divider">•</span>
+                        <span>
+                            <strong>Exercises:</strong>
+                            {{ completed_count }} / {{ total_exercises }}
+                        </span>
+                        <span class="meta-divider">•</span>
+                        <span>
+                            <strong>Status:</strong>
+                            {% if completed_count == total_exercises %}
+                                Complete
+                            {% elif completed_count > 0 %}
+                                In progress
+                            {% else %}
+                                Not started
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-action">
+                <a href="{% url 'dashboard:exercise_selection' %}" class="hero-button" id="startAssessmentBtn">
+                    Start new assessment
+                    <span>→</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- =================================================
+             STAT CARDS
+        ================================================== -->
+        <section class="stats-grid">
+
+            <!-- OVERALL SCORE -->
+            <div class="score-card">
+                <div class="score-ring">
+                    <svg viewBox="0 0 120 120">
+                        <circle class="ring-bg" cx="60" cy="60" r="48"></circle>
+                        <circle
+                            class="ring-progress"
+                            cx="60"
+                            cy="60"
+                            r="48"
+                            style="stroke-dashoffset: {{ ring_offset }};"
+                        ></circle>
+                    </svg>
+                    <div class="score-center">
+                        <strong>{{ overall_score }}</strong>
+                        <span>/100</span>
+                    </div>
+                </div>
+
+                <div class="score-info">
+                    <span class="card-label">
+                        OVERALL FITNESS SCORE
+                    </span>
+                    <h3>
+                        {% if overall_score >= 80 %}
+                            Excellent
+                        {% elif overall_score >= 60 %}
+                            Good
+                        {% elif overall_score >= 40 %}
+                            Average
+                        {% else %}
+                            Needs Improvement
+                        {% endif %}
+                    </h3>
+                    <p>
+                        Based on {{ completed_count }} completed fitness tests
+                    </p>
+                </div>
+            </div>
+
+            <!-- TOP STRENGTH -->
+            <div class="stat-card">
+                <div class="stat-card-top">
+                    <div class="stat-icon green">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 3v11"></path>
+                            <path d="M12 14l5-3"></path>
+                            <path d="M12 14l-5-3"></path>
+                            <path d="M4 21h16"></path>
+                        </svg>
+                    </div>
+                    <span class="stat-tag positive">
+                        TOP STRENGTH
+                    </span>
+                </div>
+
+                <span class="card-label">
+                    POWER
+                </span>
+                {% if completed_count >= 2 and best_exercise %}
+                    <h3>{{ best_exercise.exercise }}</h3>
+                    <div class="stat-value">
+                        {{ best_exercise.score|floatformat:0 }}
+                        <span>/ 100</span>
+                    </div>
+                {% else %}
+                    <h3>Not enough data</h3>
+                    <div class="stat-value">
+                        — <span>/ 100</span>
+                    </div>
+                    <p style="font-size: 0.78rem; color: var(--ink-muted); margin-top: 6px;">
+                        Complete 2+ tests to see strength
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- FOCUS AREA -->
+            <div class="stat-card">
+                <div class="stat-card-top">
+                    <div class="stat-icon amber">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M6 4v16"></path>
+                            <path d="M18 4v16"></path>
+                            <path d="M6 12h12"></path>
+                        </svg>
+                    </div>
+                    <span class="stat-tag attention">
+                        {% if completed_count >= 3 %}FOCUS AREA{% else %}NEXT STEP{% endif %}
+                    </span>
+                </div>
+
+                {% if completed_count >= 3 and weakest_exercise %}
+                    <span class="card-label">NEEDS WORK</span>
+                    <h3>{{ weakest_exercise.exercise }}</h3>
+                    <div class="stat-value amber-text">
+                        {{ weakest_exercise.score|floatformat:0 }} <span>/ 100</span>
+                    </div>
+                {% else %}
+                    <span class="card-label">RECOMMENDED</span>
+                    <h3>Complete more tests</h3>
+                    <div class="stat-value amber-text">
+                        {{ completed_count }} <span>/ 3 min</span>
+                    </div>
+                    <p style="font-size: 0.78rem; color: var(--ink-muted); margin-top: 6px;">
+                        Complete at least 3 to unlock focus areas
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- COMPLETED -->
+            <div class="stat-card">
+                <div class="stat-card-top">
+                    <div class="stat-icon blue">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M4 4h16v16H4z"></path>
+                            <path d="M4 9h16"></path>
+                            <path d="M9 4v16"></path>
+                        </svg>
+                    </div>
+                    <span class="stat-tag neutral">
+                        {% widthratio completed_count total_exercises 100 %}%
+                    </span>
+                </div>
+
+                <span class="card-label">
+                    ASSESSMENT PROGRESS
+                </span>
+                <h3>
+                    {{ completed_count }} / {{ total_exercises }}
+                </h3>
+                <div class="completion-bar">
+                    <span style="width: {% widthratio completed_count total_exercises 100 %}%"></span>
+                </div>
+                <p class="completion-text">
+                    exercises completed
+                </p>
+            </div>
+        </section>
+
+        <!-- =================================================
+             FITNESS COMPONENTS
+        ================================================== -->
+        <section class="content-section">
+            <div class="section-header">
+                <div>
+                    <span class="section-kicker">
+                        PERFORMANCE
+                    </span>
+                    <h2>
+                        Fitness components
+                    </h2>
+                </div>
+            </div>
+
+            <div class="fitness-components">
+                {% for row in exercise_rows %}
+                    {% if row.completed %}
+                        <div class="component-row">
+                            <div class="component-name">{{ row.name }}</div>
+                            <div class="component-bar">
+                                <span style="width: {{ row.assessment.score|floatformat:0 }}%"></span>
+                            </div>
+                            <div class="component-score">
+                                {{ row.assessment.score|floatformat:0 }}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                {% for row in exercise_rows %}
+                    {% if not row.completed %}
+                        <div class="component-row">
+                            <div class="component-name">{{ row.name }}</div>
+                            <div class="component-bar muted"><span style="width:0%"></span></div>
+                            <div class="component-score muted-text">—</div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- =================================================
+             EXERCISE RESULTS
+        ================================================== -->
+        <section class="content-section">
+            <div class="section-header">
+                <div>
+                    <span class="section-kicker">
+                        PERFORMANCE
+                    </span>
+                    <h2>
+                        Exercise results
+                    </h2>
+                </div>
+                <a href="#" class="history-link">
+                    View full history →
+                </a>
+            </div>
+
+            <div class="exercise-list">
+                {% for row in exercise_rows %}
+                    {% if row.completed %}
+                        <div class="exercise-row completed-row">
+                            <div class="exercise-icon power">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 3v11"></path>
+                                    <path d="M12 14l5-3"></path>
+                                    <path d="M12 14l-5-3"></path>
+                                    <path d="M4 21h16"></path>
+                                </svg>
+                            </div>
+
+                            <div class="exercise-info">
+                                <h3>{{ row.name }}</h3>
+                                <p>{{ row.assessment.result }}</p>
+                            </div>
+
+                            <div class="exercise-score">
+                                <div
+                                    class="mini-ring"
+                                    style="--score: {{ row.assessment.score|floatformat:0 }};"
+                                >
+                                    <span>{{ row.assessment.score|floatformat:0 }}</span>
+                                </div>
+
+                                <div class="rating {% if row.assessment.score >= 80 %}excellent{% elif row.assessment.score >= 60 %}good{% elif row.assessment.score >= 40 %}average{% else %}needs{% endif %}">
+                                    {{ row.assessment.result }}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="exercise-row pending-row">
+                            <div class="exercise-icon pending">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M6 3v18"></path>
+                                    <path d="M6 3h9l-2 4 2 4H6"></path>
+                                </svg>
+                            </div>
+
+                            <div class="exercise-info">
+                                <h3>{{ row.name }}</h3>
+                                <p>Not yet assessed</p>
+                            </div>
+
+                            <div class="exercise-score">
+                                <div class="mini-ring empty-ring">
+                                    <span>—</span>
+                                </div>
+                                <div class="rating pending">
+                                    Not assessed
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- =================================================
+             ANALYTICS
+        ================================================== -->
+        <section class="analytics-grid">
+
+            <!-- SCORE TREND -->
+            <div class="analytics-card">
+                <div class="section-header">
+                    <div>
+                        <span class="section-kicker">
+                            PROGRESS
+                        </span>
+                        <h2>
+                            Score trend
+                        </h2>
+                    </div>
+                </div>
+
+                <div class="chart">
+                    <div class="chart-y-axis">
+                        <span>100</span>
+                        <span>75</span>
+                        <span>50</span>
+                        <span>25</span>
+                        <span>0</span>
+                    </div>
+
+                    <div class="chart-area">
+                        <div class="grid-line line-1"></div>
+                        <div class="grid-line line-2"></div>
+                        <div class="grid-line line-3"></div>
+                        <div class="grid-line line-4"></div>
+
+                        <svg
+                            viewBox="0 0 500 190"
+                            preserveAspectRatio="none"
+                            class="trend-svg"
+                        >
+                            <defs>
+                                <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#1f6b48" stop-opacity="0.20" />
+                                    <stop offset="100%" stop-color="#1f6b48" stop-opacity="0" />
+                                </linearGradient>
+                            </defs>
+
+                            <polygon
+                                points="10,145 120,125 230,103 335,95 470,60 470,180 10,180"
+                                fill="url(#trendGradient)"
+                            />
+
+                            <polyline
+                                points="10,145 120,125 230,103 335,95 470,60"
+                                fill="none"
+                                stroke="#1f6b48"
+                                stroke-width="4"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            />
+
+                            <circle cx="10" cy="145" r="5"></circle>
+                            <circle cx="120" cy="125" r="5"></circle>
+                            <circle cx="230" cy="103" r="5"></circle>
+                            <circle cx="335" cy="95" r="5"></circle>
+                            <circle cx="470" cy="60" r="5"></circle>
+                        </svg>
+
+                        <div class="chart-labels">
+                            <span>Assessment 1</span>
+                            <span>Assessment 2</span>
+                            <span>Assessment 3</span>
+                            <span>Assessment 4</span>
+                            <span>Latest</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RECOMMENDATIONS -->
+            <div class="analytics-card recommendations-card">
+                <div class="section-header">
+                    <div>
+                        <span class="section-kicker">
+                            NEXT STEPS
+                        </span>
+                        <h2>
+                            Focus areas
+                        </h2>
+                    </div>
+                </div>
+
+                    <div class="recommendation-list">
+
+                        {% if completed_count < 3 %}
+                        <div class="recommendation">
+                            <div class="recommendation-icon warning">!</div>
+                            <div>
+                                <h3>Complete more assessments</h3>
+                                <p>
+                                    You've completed {{ completed_count }} of {{ total_exercises }} exercises.
+                                    Complete at least 3 to get personalized focus areas.
+                                </p>
+                            </div>
+                        </div>
+                        {% else %}
+                            {% if weakest_exercise %}
+                            <div class="recommendation">
+                                <div class="recommendation-icon warning">!</div>
+                                <div>
+                                    <h3>Focus on {{ weakest_exercise.exercise }}</h3>
+                                    <p>
+                                        Your score here is {{ weakest_exercise.score|floatformat:0 }}.
+                                        Improving this will balance your fitness profile.
+                                    </p>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endif %}
+
+                        {% if best_exercise %}
+                        <div class="recommendation success-recommendation">
+                            <div class="recommendation-icon success">✓</div>
+                            <div>
+                                <h3>
+                                    {{ best_exercise.exercise }} is your strength
+                                </h3>
+                                <p>
+                                    You scored {{ best_exercise.score|floatformat:0 }} in this — keep it up!
+                                </p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if completed_count < total_exercises %}
+                        <div class="recommendation">
+                            <div class="recommendation-icon warning">!</div>
+                            <div>
+                                <h3>Pending assessments</h3>
+                                <p>
+                                    {{ total_exercises|add:"-"|add:completed_count }} exercises still pending.
+                                    Complete them to unlock full profile.
+                                </p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                    </div>
+            </div>
+        </section>
+
+        <!-- =================================================
+             RECENT ASSESSMENTS
+        ================================================== -->
+        <section class="recent-section">
+            <div class="section-header">
+                <div>
+                    <span class="section-kicker">
+                        ACTIVITY
+                    </span>
+                    <h2>
+                        Recent assessments
+                    </h2>
+                </div>
+            </div>
+
+            <div class="activity-grid">
+                {% for a in assessments|slice:":5" %}
+                    <div class="activity-item">
+                        <span class="activity-dot green"></span>
+                        <div>
+                            <strong>{{ a.exercise }}</strong>
+                            <span>{{ a.result }} assessment</span>
+                        </div>
+                        <time>{{ a.created_at|timesince }} ago</time>
+                    </div>
+                {% empty %}
+                    <p>No assessments yet.</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- =================================================
+             FINAL CTA
+        ================================================== -->
+        <section class="final-cta">
+            <div>
+                <span class="cta-kicker">
+                    READY FOR THE NEXT TEST?
+                </span>
+                <h2>
+                    Complete another assessment
+                </h2>
+                <p>
+                    Continue building your fitness profile with AI-assisted assessment.
+                </p>
+            </div>
+
+            <a href="{% url 'dashboard:exercise_selection' %}" class="cta-button" id="finalAssessmentBtn">
+                Start new assessment
+                <span>→</span>
+            </a>
+        </section>
+
+        <!-- footer removed as requested -->
+
+    </main>
+</div>
+
+<script src="{% static 'dashboard.js' %}"></script>
+</body>
+</html>
