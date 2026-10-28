@@ -37,12 +37,14 @@ ALLOWED_HOSTS = os.getenv(
 ).split(',')
 
 # HF Spaces domains
-ALLOWED_HOSTS += ['.hf.space', '.huggingface.co']
+ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://*.hf.space',
-    'https://*.huggingface.co',
+    'https://*.trycloudflare.com',
 ]
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"
 
 # Application definition
 INSTALLED_APPS = [
@@ -71,7 +73,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',   # <-- YAHAN ADD
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

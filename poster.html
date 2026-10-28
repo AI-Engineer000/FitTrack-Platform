@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Fitness Assessment Platform — Gwalior Vigyan Mahotsav 2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        /* =========================================================
+           PRINT & SCREEN RESET
+           Target: Standard Academic Poster (36" x 48" / A0 Portrait)
+           ========================================================= */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, body * { font-family: "Times New Roman", Times, serif !important; }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: "Times New Roman", Times, serif !important;
+            font-weight: 700;
+            letter-spacing: normal;
+            line-height: 1.2;
+            text-transform: none;
+        }
+
+        @page {
+            size: 36in 48in portrait;
+            margin: 0;
+        }
+
+        :root {
+            --primary-navy: #0a192f;
+            --secondary-navy: #112240;
+            --accent-green: #10b981;
+            --accent-green-dark: #047857;
+            --accent-green-soft: #ecfdf5;
+            --accent-coral: #f97316;
+            --accent-coral-soft: #fff7ed;
+            --accent-gold: #f59e0b;
+            --text-dark: #0f172a;
+            --text-muted: #475569;
+            --text-light: #f8fafc;
+            --border-color: #cbd5e1;
+            --card-bg: #ffffff;
+            --body-bg: #f8fafc;
+            --shadow-sm: 0 2px 4px rgba(15, 23, 42, 0.05);
+            --shadow-md: 0 6px 18px rgba(15, 23, 42, 0.07);
+            --shadow-lg: 0 12px 30px rgba(15, 23, 42, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #e2e8f0;
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            padding: 24px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Poster Outer Canvas Container */
+        .poster-canvas {
+            width: 1400px; /* Scaled viewport equivalent for 36x48 ratio */
+            min-height: 1866px;
+            background: var(--body-bg);
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Floating Print Action Toolbar */
+        .print-toolbar {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            background: var(--primary-navy);
+            padding: 12px 20px;
+            border-radius: 50px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .print-btn {
+            background: var(--accent-green);
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .print-btn:hover {
+            background: var(--accent-green-dark);
+            transform: translateY(-2px);
+        }
+
+        @media print {
+            body { background: none; padding: 0; }
+            .print-toolbar { display: none !important; }
+            .poster-canvas {
+                width: 100% !important;
+                min-height: 100% !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+            }
+        }
+
+        /* =========================================================
+           POSTER HEADER SECTION
+           ========================================================= */
+        .poster-header {
+            background: linear-gradient(135deg, #071527 0%, #0d213d 50%, #132f54 100%);
+            color: #ffffff;
+            padding: 32px 48px 28px 48px;
+            border-bottom: 6px solid var(--accent-gold);
+            position: relative;
+        }
+
+        .institution-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            gap: 20px;
+        }
+
+        .inst-logo-badge {
+            width: 90px;
+            height: 90px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 3px solid var(--accent-gold);
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 800;
+            font-size: 1.4rem;
+            color: var(--primary-navy);
+            text-align: center;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .inst-text-block {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .inst-hindi {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            letter-spacing: 0.02em;
+            margin-bottom: 2px;
+        }
+
+        .inst-english {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 2.1rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
+        .inst-meta {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        .inst-badge-pill {
+            display: inline-block;
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-gold);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+
+        .event-crest-badge {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--accent-green);
+            padding: 8px 16px;
+            border-radius: 12px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .event-tag {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent-green);
+        }
+
+        .event-name {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .event-venue {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+        }
+
+        /* Title Area */
+        .title-row {
+            margin-top: 24px;
+            text-align: center;
+        }
+
+        .project-main-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 3.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            line-height: 1.05;
+            background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .project-highlight {
+            color: var(--accent-gold);
+            -webkit-text-fill-color: var(--accent-gold);
+        }
+
+        .project-subtitle {
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: #38bdf8;
+            margin-top: 8px;
+            letter-spacing: 0.03em;
+        }
+
+        /* Presenters & Guide Bar */
+        .presenters-bar {
+            margin-top: 20px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .author-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .author-label {
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent-gold);
+        }
+
+        .author-names {
+            font-size: 1.12rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .author-id {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .dept-group {
+            font-size: 0.95rem;
+            color: #cbd5e1;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        /* =========================================================
+           POSTER BODY & GRID STRUCTURE
+           ========================================================= */
+        .poster-content {
+            padding: 32px 48px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            flex-grow: 1;
+        }
+
+        /* Common Card Styles */
+        .card {
+            background: var(--card-bg);
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            padding: 14px 22px;
+            background: #f1f5f9;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.45rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--primary-navy);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-tag {
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: var(--accent-green-soft);
+            color: var(--accent-green-dark);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .card-body {
+            padding: 20px 24px;
+            flex-grow: 1;
+        }
+
+        /* Section 1: Intro & Problem Row */
+        .intro-problem-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .text-lead {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: #334155;
+        }
+
+        .bullet-list {
+            margin-top: 10px;
+            padding-left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .bullet-list li {
+            font-size: 0.98rem;
+            line-height: 1.5;
+            color: #334155;
+        }
+
+        /* =========================================================
+           CENTERPIECE: THE 8-STEP WORKFLOW PIPELINE
+           (Dhruv's specific instruction: Full workflow must dominate!)
+           ========================================================= */
+        .workflow-card {
+            border: 2px solid #0284c7;
+            background: #ffffff;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .workflow-card .card-header {
+            background: linear-gradient(90deg, #0369a1 0%, #0284c7 100%);
+            color: #ffffff;
+            border-bottom: none;
+        }
+
+        .workflow-card .card-title {
+            color: #ffffff;
+            font-size: 1.7rem;
+        }
+
+        .workflow-card .card-tag {
+            background: #ffffff;
+            color: #0369a1;
+            font-weight: 800;
+        }
+
+        .workflow-container {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+            background: #f8fafc;
+        }
+
+        .workflow-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            position: relative;
+        }
+
+        .step-tile {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 18px 16px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .step-tile:hover {
+            transform: translateY(-3px);
+            border-color: #0284c7;
+        }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .step-num {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #0284c7;
+            line-height: 1;
+        }
+
+        .step-icon-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: #e0f2fe;
+            color: #0369a1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        .step-name {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.28rem;
+            font-weight: 700;
+            color: var(--primary-navy);
+            margin-bottom: 6px;
+            line-height: 1.15;
+        }
+
+        .step-desc {
+            font-size: 0.88rem;
+            color: #475569;
+            line-height: 1.45;
+        }
+
+        /* Directional Connecting Arrows between stages */
+        .flow-connector-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            height: 24px;
+        }
+
+        .turn-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            width: 100%;
+            padding-right: 80px;
+            color: #0284c7;
+            font-weight: 800;
+            font-size: 1.4rem;
+        }
+
+        /* Highlight for AI steps */
+        .step-ai {
+            border-left: 4px solid var(--accent-green);
+            background: #f0fdf4;
+        }
+        .step-ai .step-num { color: var(--accent-green-dark); }
+        .step-ai .step-icon-badge { background: #dcfce7; color: var(--accent-green-dark); }
+
+        /* Highlight for Result steps */
+        .step-res {
+            border-left: 4px solid var(--accent-coral);
+            background: #fff7ed;
+        }
+        .step-res .step-num { color: var(--accent-coral); }
+        .step-res .step-icon-badge { background: #ffedd5; color: var(--accent-coral); }
+
+        /* =========================================================
+           MIDDLE SECTION: EXERCISES + BIOMECHANICAL AI ENGINE
+           ========================================================= */
+        .middle-split-grid {
+            display: grid;
+            grid-template-columns: 1.25fr 1fr;
+            gap: 24px;
+        }
+
+        /* 8 Exercise Modules Matrix (4 x 2 Grid) */
+        .exercise-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .exercise-tile {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .ex-icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+            border: 1px solid #cbd5e1;
+        }
+
+        .ex-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .ex-name {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-navy);
+            line-height: 1.1;
+        }
+
+        .ex-metric {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--accent-coral);
+        }
+
+        .ex-desc {
+            font-size: 0.82rem;
+            color: #64748b;
+            line-height: 1.35;
+        }
+
+        /* Biomechanical Pose Engine Card */
+        .pose-diagram-box {
+            background: #0b131e;
+            border-radius: 12px;
+            padding: 16px;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            border: 1px solid #1e293b;
+        }
+
+        .pose-visual-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 16px;
+        }
+
+        .skeleton-graphic {
+            width: 170px;
+            height: 200px;
+            background: #0f172a;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .angle-formula-box {
+            flex: 1;
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 8px;
+            padding: 14px;
+            border-left: 3px solid var(--accent-green);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .formula-title {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent-green);
+        }
+
+        .formula-math {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.05rem;
+            color: #f8fafc;
+            background: #020617;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            text-align: center;
+        }
+
+        .formula-expl {
+            font-size: 0.82rem;
+            color: #cbd5e1;
+            line-height: 1.4;
+        }
+
+        .state-machine-box {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 8px;
+            padding: 12px 14px;
+            border: 1px dashed #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sm-node {
+            background: #1e293b;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #38bdf8;
+            text-align: center;
+            border: 1px solid #475569;
+        }
+
+        .sm-arrow {
+            color: var(--accent-gold);
+            font-size: 0.9rem;
+            font-weight: 800;
+        }
+
+        /* =========================================================
+           LOWER SECTION: MEASURABLE RESULTS & APP SNAPSHOTS
+           ========================================================= */
+        .results-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .snapshot-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .snapshot-title-bar {
+            padding: 8px 14px;
+            background: #f1f5f9;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--primary-navy);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .snapshot-img-frame {
+            background: #0f172a;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .snapshot-footer {
+            padding: 12px 14px;
+            font-size: 0.84rem;
+            color: #475569;
+            line-height: 1.4;
+            background: #ffffff;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        /* Live Camera Simulated Screen */
+        .hud-live-display {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #13271f 0%, #070e0a 100%);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10px;
+        }
+
+        .hud-top-bar {
+            display: flex;
+            justify-content: space-between;
+            font-family: monospace;
+            font-size: 0.7rem;
+            color: #34d399;
+        }
+
+        .hud-center-metric {
+            text-align: center;
+            font-family: 'Barlow Condensed', sans-serif;
+        }
+
+        .hud-big-num {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1;
+            text-shadow: 0 0 15px rgba(52, 211, 153, 0.6);
+        }
+
+        .hud-sub-label {
+            font-size: 0.75rem;
+            color: #a7f3d0;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .hud-bottom-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        /* Athlete Progress Mock */
+        .athlete-progress-mock {
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .score-circle-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .mock-circle-score {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 5px solid var(--accent-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary-navy);
+            flex-shrink: 0;
+        }
+
+        .mock-ath-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .mock-ath-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary-navy);
+        }
+
+        .mock-ath-sport {
+            font-size: 0.78rem;
+            color: #64748b;
+        }
+
+        .mock-svg-chart {
+            width: 100%;
+            height: 65px;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: flex-end;
+            padding: 4px 8px;
+        }
+
+        /* Access Control Badge Frame */
+        .access-control-mock {
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 10px;
+            color: #ffffff;
+        }
+
+        .ac-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1e293b;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+        }
+
+        .ac-pass {
+            background: #065f46;
+            color: #6ee7b7;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        /* =========================================================
+           BOTTOM SUMMARY ROW: APPLICATIONS, FUTURE SCOPE, CONCLUSION
+           ========================================================= */
+        .bottom-three-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr 1.2fr;
+            gap: 24px;
+        }
+
+        .feature-callout-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .callout-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.88rem;
+            line-height: 1.4;
+            color: #334155;
+        }
+
+        .callout-check {
+            color: var(--accent-green);
+            font-weight: 800;
+            font-size: 1rem;
+            line-height: 1.2;
+        }
+
+        .conclusion-box {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #ffffff;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-left: 4px solid var(--accent-gold);
+            height: 100%;
+        }
+
+        .conclusion-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .conclusion-text {
+            font-size: 0.92rem;
+            line-height: 1.55;
+            color: #e2e8f0;
+        }
+
+        /* =========================================================
+           POSTER FOOTER
+           ========================================================= */
+        .poster-footer {
+            background: var(--primary-navy);
+            color: #94a3b8;
+            padding: 16px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            border-top: 3px solid var(--accent-gold);
+        }
+
+        .footer-highlight {
+            color: #ffffff;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Floating Quick Print Toolbar -->
+    <div class="print-toolbar">
+        <button class="print-btn" onclick="window.print()">
+            🖨️ Print / Save as High-Res PDF (A0 / 36×48")
+        </button>
+    </div>
+
+    <!-- MAIN POSTER CANVAS -->
+    <div class="poster-canvas">
+
+        <!-- ================= POSTER HEADER ================= -->
+        <header class="poster-header">
+            <div class="institution-row">
+                <!-- MITS Logo Emblem -->
+                <div class="inst-logo-badge">
+                    MITS<br><span style="font-size:0.65rem; color:#64748b; font-weight:700;">GWALIOR</span>
+                </div>
+
+                <!-- Central Institutional Branding -->
+                <div class="inst-text-block">
+                    <div class="inst-hindi">माधव प्रौद्योगिकी एवं विज्ञान संस्थान, ग्वालियर (म.प्र.), भारत</div>
+                    <div class="inst-english">Madhav Institute of Technology & Science, Gwalior (M.P.), India</div>
+                    <div class="inst-meta">
+                        (Deemed to be University · Declared under Distinct Category by Ministry of Education, Govt. of India)
+                        <span class="inst-badge-pill">NAAC A++ GRADE</span>
+                    </div>
+                </div>
+
+                <!-- Event Crest Badge -->
+                <div class="event-crest-badge">
+                    <div class="event-tag">Vigyan Bharati Event</div>
+                    <div class="event-name">Gwalior Vigyan Mahotsav 2026</div>
+                    <div class="event-venue">ABV-IIITM Gwalior</div>
+                </div>
+            </div>
+
+            <!-- Main Project Title -->
+            <div class="title-row">
+                <h1 class="project-main-title">
+                    AI-POWERED <span class="project-highlight">FITNESS ASSESSMENT</span> PLATFORM
+                </h1>
+                <div class="project-subtitle">
+                    Real-Time Movement Analysis and Automated Fitness Assessment using Computer Vision
+                </div>
+            </div>
+
+            <!-- Presenters & Dept Bar -->
+            <div class="presenters-bar">
+                <div class="author-group">
+                    <span class="author-label">Presented by:</span>
+                    <span class="author-names">
+                        Aakanksha Vidushi Pandey <span class="author-id">(BTAI21O1001)</span> &nbsp;·&nbsp;
+                        Dhruv Urmaliya <span class="author-id">(BTAI21O1042)</span>
+                    </span>
+                </div>
+                <div class="dept-group">
+                    Centre for Artificial Intelligence &nbsp;·&nbsp; Department of AI, MITS Gwalior
+                </div>
+            </div>
+        </header>
+
+        <!-- ================= POSTER CONTENT ================= -->
+        <div class="poster-content">
+
+            <!-- SECTION 1: INTRODUCTION & PROBLEM STATEMENT -->
+            <div class="intro-problem-grid">
+                <!-- Card 1: Introduction -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>01</span> Introduction & Overview
+                        </div>
+                        <span class="card-tag">Computer Vision</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-lead">
+                            The <strong>AI-Powered Fitness Assessment Platform</strong> is a modern computer-vision application designed to assist coaches, sports academies, and fitness trainers in conducting objective physical evaluations.
+                        </p>
+                        <ul class="bullet-list">
+                            <li>Replaces subjective manual counting with real-time pose estimation.</li>
+                            <li>Extracts 17 full-body keypoints from a standard webcam video feed.</li>
+                            <li>Calculates joint angles and movement displacement via vector mathematics.</li>
+                            <li>Unifies live movement analysis, athlete management, and historical progress.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Card 2: Problem Statement -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>02</span> Problem Statement
+                        </div>
+                        <span class="card-tag">Challenges Addressed</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-lead">
+                            Traditional fitness testing in academies and schools relies heavily on manual stopwatches, physical observation, and paper scorecards.
+                        </p>
+                        <ul class="bullet-list">
+                            <li><strong>Observer Bias:</strong> Human fatigue causes missed repetitions and inconsistent judging.</li>
+                            <li><strong>No Joint Angle Verification:</strong> Incomplete repetitions (e.g. shallow sit-ups) get falsely counted.</li>
+                            <li><strong>Data Fragmentation:</strong> Paper-based records make cohort tracking and progress analysis cumbersome.</li>
+                            <li><strong>Accessibility:</strong> High-end motion capture labs are prohibitively expensive for grassroots sports.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: THE 8-STEP WORKFLOW PIPELINE (THE DOMINANT CENTERPIECE) -->
+            <div class="card workflow-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>⭐</span> END-TO-END OPERATIONAL WORKFLOW (THE 8-STEP PIPELINE)
+                    </div>
+                    <span class="card-tag">Core Architecture</span>
+                </div>
+                <div class="workflow-container">
+                    
+                    <!-- Row 1: Setup & Movement Capture -->
+                    <div class="workflow-row">
+                        <!-- Step 01 -->
+                        <div class="step-tile">
+                            <div class="step-header">
+                                <span class="step-num">01</span>
+                                <div class="step-icon-badge">🔐</div>
+                            </div>
+                            <div class="step-name">Trainer Sign In</div>
+                            <div class="step-desc">
+                                Secure login with session verification. Enforces strict multi-trainer data isolation (<code style="font-size:0.75rem;">trainer=request.user</code>).
+                            </div>
+                        </div>
+
+                        <!-- Step 02 -->
+                        <div class="step-tile">
+                            <div class="step-header">
+                                <span class="step-num">02</span>
+                                <div class="step-icon-badge">👤</div>
+                            </div>
+                            <div class="step-name">Athlete Selection</div>
+                            <div class="step-desc">
+                                Trainer selects an existing athlete profile or registers a new candidate with sport, age, height, and weight baseline.
+                            </div>
+                        </div>
+
+                        <!-- Step 03 -->
+                        <div class="step-tile">
+                            <div class="step-header">
+                                <span class="step-num">03</span>
+                                <div class="step-icon-badge">🎯</div>
+                            </div>
+                            <div class="step-name">Exercise Selection</div>
+                            <div class="step-desc">
+                                Trainer chooses one of the 8 physical fitness battery tests (e.g. Vertical Jump, Sit-ups, Sprint, Broad Jump).
+                            </div>
+                        </div>
+
+                        <!-- Step 04 -->
+                        <div class="step-tile">
+                            <div class="step-header">
+                                <span class="step-num">04</span>
+                                <div class="step-icon-badge">📹</div>
+                            </div>
+                            <div class="step-name">Movement Capture</div>
+                            <div class="step-desc">
+                                Browser accesses webcam via HTML5 <code style="font-size:0.75rem;">getUserMedia()</code>. Frames captured at 4 FPS (250ms) to optimize CPU/GPU.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Flow Directional Indicator -->
+                    <div class="turn-arrow">
+                        <span>AI Inference Pipeline & Execution Flow &nbsp; ➔ &nbsp; ⬇</span>
+                    </div>
+
+                    <!-- Row 2: AI Inference & Record Storage -->
+                    <div class="workflow-row">
+                        <!-- Step 05 -->
+                        <div class="step-tile step-ai">
+                            <div class="step-header">
+                                <span class="step-num">05</span>
+                                <div class="step-icon-badge">🤖</div>
+                            </div>
+                            <div class="step-name">Pose Detection</div>
+                            <div class="step-desc">
+                                YOLO26-Pose extracts 17 body keypoints (shoulders, elbows, wrists, hips, knees, ankles) with confidence filtering (&gt;0.5).
+                            </div>
+                        </div>
+
+                        <!-- Step 06 -->
+                        <div class="step-tile step-ai">
+                            <div class="step-header">
+                                <span class="step-num">06</span>
+                                <div class="step-icon-badge">📐</div>
+                            </div>
+                            <div class="step-name">Movement Analysis</div>
+                            <div class="step-desc">
+                                Vector dot product calculates joint angles. Biomechanical state machine validates movement cycles without jitter.
+                            </div>
+                        </div>
+
+                        <!-- Step 07 -->
+                        <div class="step-tile step-res">
+                            <div class="step-header">
+                                <span class="step-num">07</span>
+                                <div class="step-icon-badge">📊</div>
+                            </div>
+                            <div class="step-name">Real-Time Results</div>
+                            <div class="step-desc">
+                                Real-time canvas overlays skeleton lines, displays live joint angles, repetition counts, peak displacement & score (0-100).
+                            </div>
+                        </div>
+
+                        <!-- Step 08 -->
+                        <div class="step-tile step-res">
+                            <div class="step-header">
+                                <span class="step-num">08</span>
+                                <div class="step-icon-badge">💾</div>
+                            </div>
+                            <div class="step-name">Save & Review</div>
+                            <div class="step-desc">
+                                Assessment saved to SQLite/PostgreSQL. Instant updates to athlete history, progression graphs, and team reports.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECTION 3: EXERCISE MODULES + HOW AI UNDERSTANDS MOVEMENT -->
+            <div class="middle-split-grid">
+                
+                <!-- Left: Eight Exercise Modules (4 x 2 Grid) -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>🏃‍♂️</span> Eight Fitness Exercise Modules
+                        </div>
+                        <span class="card-tag">Physical Battery</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="exercise-grid">
+                            <!-- 1. Vertical Jump -->
+                            <div class="exercise-tile">
+                                <div class="ex-icon-box">⬆️</div>
+                                <div class="ex-info">
+                                    <div class="ex-name">Vertical Jump</div>
+                                    <div class="ex-metric">Displacement (cm)</div>
+                                    <div class="ex-desc">Tracks ankle vertical Y-displacement from the standing baseline.</div>
+                                </div>
+                            </div>
+
+                            <!-- 2. Broad Jump -->
+                            <div class="exercise-tile">
+                                <div class="ex-icon-box">➡️</div>
+                                <div class="ex-info">
+                                    <div class="ex-name">Broad Jump</div>
+                                    <div class="ex-metric">Displacement (cm)</div>
+                                    <div class="ex-desc">Measures horizontal takeoff-to-landing ankle X-displacement.</div>
+                                </div>
+                            </div>
+
+                            <!-- 3. Sit-ups -->
+                            <div class="exercise-tile">
+                                <div class="ex-icon-box">🔄</div>
+                                <div class="ex-info">
+                                    <div class="ex-name">Sit-ups</div>
+                                    <div class="ex-metric">Repetitions (Count)</div>
+                                    <div class="ex-desc">Calculates hip angle (Shoulder-Hip-Knee); counts full UP/DOWN cycles.</div>
+                                </div>
+                            </div>
+
+                            <!-- 4. Sit & Reach -->
+                            <div class="exercise-tile">
+                                <div class="ex-icon-box">🖐️</div>
+                                <div class="ex-info">
+                                    <div class="ex-name">Sit & Reach</div>
+                                    <div class="ex-metric">Reach (cm)</div>
+                                    <div class="ex-desc">Evaluates maximum forward wrist reach beyond toe baseline.</div>
+                                </div>
+                            </div>
+
+                            <!-- 5. Sprint -->
+                            <div class="exercise-tile">
+                                <div class="ex-icon-box">⚡</div>
+                                <div class="ex-info">
+                                    <div class="ex-name">Sprint Test</div>
+                                    <div class="ex-metric">Time (Seconds)</div>
+                                    <div class="ex-desc">Tracks ankle line-crossing triggers with precision digital timer.</div>
+                                </div>
+                            </div>
+
+                            <!-- 6. Medicine Ball -->
+                            <div class="exercise-tile">
+                                <div class="ex-icon-box">🏐</div>
+                                <div class="ex-info">
+                                    <div class="ex-name">Medicine Ball</div>
+                                    <div class="ex-metric">Distance (cm)</div>
+                                    <div class="ex-desc">Measures upper-body explosive power via wrist release proxy tracking.</div>
+                                </div>
+                            </div>
+
+                            <!-- 7. Shuttle Run -->
+                            <div class="exercise-tile">
+                                <div class="ex-icon-box">🔁</div>
+                                <div class="ex-info">
+                                    <div class="ex-name">Shuttle Run</div>
+                                    <div class="ex-metric">Crossings (Laps)</div>
+                                    <div class="ex-desc">Counts directional agility boundary crossings via hip coordinate.</div>
+                                </div>
+                            </div>
+
+                            <!-- 8. Endurance Run -->
+                            <div class="exercise-tile">
+                                <div class="ex-icon-box">⏱️</div>
+                                <div class="ex-info">
+                                    <div class="ex-name">Endurance Run</div>
+                                    <div class="ex-metric">Laps Counted</div>
+                                    <div class="ex-desc">Monitors stamina cadence through completed round-trip crossings.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: How AI Understands Movement (Pose Math & State Machine) -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>🧠</span> Biomechanical Movement Analysis
+                        </div>
+                        <span class="card-tag">Computer Vision Math</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="pose-diagram-box">
+                            
+                            <!-- Visual Row -->
+                            <div class="pose-visual-row">
+                                <!-- Skeleton Graphic -->
+                                <div class="skeleton-graphic">
+                                    <svg width="150" height="190" viewBox="0 0 100 130">
+                                        <!-- Head -->
+                                        <circle cx="50" cy="15" r="7" fill="#fbbf24" stroke="#ffffff" stroke-width="1.5"/>
+                                        <!-- Torso -->
+                                        <line x1="50" y1="22" x2="50" y2="65" stroke="#10b981" stroke-width="3"/>
+                                        <!-- Shoulders -->
+                                        <line x1="32" y1="30" x2="68" y2="30" stroke="#10b981" stroke-width="2.5"/>
+                                        <!-- Arms -->
+                                        <line x1="32" y1="30" x2="22" y2="48" stroke="#10b981" stroke-width="2.5"/>
+                                        <line x1="22" y1="48" x2="16" y2="68" stroke="#10b981" stroke-width="2.5"/>
+                                        <line x1="68" y1="30" x2="78" y2="48" stroke="#10b981" stroke-width="2.5"/>
+                                        <line x1="78" y1="48" x2="84" y2="68" stroke="#10b981" stroke-width="2.5"/>
+                                        <!-- Hips -->
+                                        <line x1="38" y1="65" x2="62" y2="65" stroke="#10b981" stroke-width="2.5"/>
+                                        <!-- Legs -->
+                                        <line x1="38" y1="65" x2="35" y2="92" stroke="#10b981" stroke-width="2.5"/>
+                                        <line x1="35" y1="92" x2="33" y2="122" stroke="#10b981" stroke-width="2.5"/>
+                                        <line x1="62" y1="65" x2="65" y2="92" stroke="#10b981" stroke-width="2.5"/>
+                                        <line x1="65" y1="92" x2="67" y2="122" stroke="#10b981" stroke-width="2.5"/>
+                                        <!-- Keypoint Joints -->
+                                        <circle cx="32" cy="30" r="3.5" fill="#34d399"/>
+                                        <circle cx="68" cy="30" r="3.5" fill="#34d399"/>
+                                        <circle cx="22" cy="48" r="3" fill="#34d399"/>
+                                        <circle cx="78" cy="48" r="3" fill="#34d399"/>
+                                        <circle cx="16" cy="68" r="3" fill="#fb923c"/>
+                                        <circle cx="84" cy="68" r="3" fill="#fb923c"/>
+                                        <circle cx="38" cy="65" r="3.5" fill="#fb923c"/>
+                                        <circle cx="62" cy="65" r="3.5" fill="#fb923c"/>
+                                        <circle cx="35" cy="92" r="3.5" fill="#fb923c"/>
+                                        <circle cx="65" cy="92" r="3.5" fill="#fb923c"/>
+                                        <circle cx="33" cy="122" r="4" fill="#f43f5e"/>
+                                        <circle cx="67" cy="122" r="4" fill="#f43f5e"/>
+                                    </svg>
+                                </div>
+
+                                <!-- Angle Calculation Formula -->
+                                <div class="angle-formula-box">
+                                    <div class="formula-title">Joint Angle Formula (Vector Dot Product)</div>
+                                    <div class="formula-math">
+                                        θ = arccos( (BA · BC) / (|BA| × |BC|) )
+                                    </div>
+                                    <div class="formula-expl">
+                                        For 3 points A (Shoulder), B (Hip), C (Knee), vectors <code style="color:#a7f3d0;">BA</code> and <code style="color:#a7f3d0;">BC</code> compute the precise flexion/extension angle.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Biomechanical State Machine Hysteresis -->
+                            <div class="state-machine-box">
+                                <div class="sm-node">
+                                    START<br><small style="color:#94a3b8;">Angle &gt; 140°</small>
+                                </div>
+                                <div class="sm-arrow">➔</div>
+                                <div class="sm-node" style="color:var(--accent-gold); border-color:var(--accent-gold);">
+                                    UP STAGE<br><small style="color:#cbd5e1;">Angle &lt; 100°</small>
+                                </div>
+                                <div class="sm-arrow">➔</div>
+                                <div class="sm-node" style="color:var(--accent-green); border-color:var(--accent-green);">
+                                    REP COUNTED<br><small style="color:#cbd5e1;">Return &gt; 140°</small>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- SECTION 4: MEASURABLE RESULTS & APPLICATION INTERFACES -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>📱</span> Measurable Results & Athlete Performance Tracking
+                    </div>
+                    <span class="card-tag">Production Application UI</span>
+                </div>
+                <div class="card-body">
+                    <div class="results-section">
+                        
+                        <!-- Screen 1: Live Assessment HUD with Real Pose Estimation -->
+                        <div class="snapshot-card">
+                            <div class="snapshot-title-bar">
+                                <span>FIGURE 1: TRAINER DASHBOARD</span>
+                                <span style="color:var(--accent-green);">● PRODUCTION UI</span>
+                            </div>
+                            <div class="snapshot-img-frame" style="background:#f1f5f9;">
+                                <img src="access-control-evidence/01-trainer-a-dashboard.jpg" alt="Trainer Dashboard" style="width:100%; height:100%; object-fit:cover;">
+                            </div>
+                            <div class="snapshot-footer">
+                                <strong>Multi-Athlete Roster:</strong> Athlete directory with live search, sport filtering, completed battery count, and team assessment summaries.
+                            </div>
+                        </div>
+
+                        <!-- Screen 2: Team Performance Reports -->
+                        <div class="snapshot-card">
+                            <div class="snapshot-title-bar">
+                                <span>FIGURE 2: TEAM PERFORMANCE ANALYTICS</span>
+                                <span style="color:#0284c7;">REPORTS</span>
+                            </div>
+                            <div class="snapshot-img-frame" style="background:#f1f5f9;">
+                                <img src="access-control-evidence/09a-reports-trainer-a.jpg" alt="Reports Analytics" style="width:100%; height:100%; object-fit:cover;">
+                            </div>
+                            <div class="snapshot-footer">
+                                <strong>Cohort Intelligence:</strong> Team average scores, top 5 athletes, score distribution bars, and automated weakest fitness module identification.
+                            </div>
+                        </div>
+
+                        <!-- Screen 3: Real Pose Estimation & Exercise Analysis -->
+                        <div class="snapshot-card">
+                            <div class="snapshot-title-bar">
+                                <span>FIGURE 3: LIVE POSE & MOVEMENT ANALYSIS</span>
+                                <span style="color:#10b981;">YOLO26-POSE 17-KP</span>
+                            </div>
+                            <div class="snapshot-img-frame" style="background:#000000;">
+                                <img src="poster_screenshots/Milestone 3_macro_image4.png" alt="YOLO Pose Analysis" style="width:100%; height:100%; object-fit:contain;">
+                            </div>
+                            <div class="snapshot-footer">
+                                <strong>Actual Vision Inference:</strong> Real webcam capture displaying YOLO26-Pose 17-keypoint skeleton extraction, joint-angle calculation, and repetition counting.
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 5: APPLICATIONS, FUTURE SCOPE & CONCLUSION -->
+            <div class="bottom-three-grid">
+                
+                <!-- Applications Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>🏟️</span> Real-World Applications
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="feature-callout-grid">
+                            <div class="callout-item">
+                                <span class="callout-check">✔</span>
+                                <div><strong>Sports Academies:</strong> Grassroots athletic scouting and objective physical battery grading.</div>
+                            </div>
+                            <div class="callout-item">
+                                <span class="callout-check">✔</span>
+                                <div><strong>Schools & Universities:</strong> Standardized annual physical education fitness reports.</div>
+                            </div>
+                            <div class="callout-item">
+                                <span class="callout-check">✔</span>
+                                <div><strong>Armed Forces & Police:</strong> Automated, transparent physical eligibility testing without human fatigue.</div>
+                            </div>
+                            <div class="callout-item">
+                                <span class="callout-check">✔</span>
+                                <div><strong>Physiotherapy Clinics:</strong> Range-of-motion measurement and rehabilitation recovery tracking.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Future Scope Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>🚀</span> Future Scope
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="feature-callout-grid">
+                            <div class="callout-item">
+                                <span class="callout-check">✦</span>
+                                <div><strong>Edge NPU Deployment:</strong> On-device smartphone inference using WebAssembly / ONNX.</div>
+                            </div>
+                            <div class="callout-item">
+                                <span class="callout-check">✦</span>
+                                <div><strong>Real-Time Audio Coaching:</strong> Text-to-speech feedback (e.g. <em>"Keep your knees straight"</em>).</div>
+                            </div>
+                            <div class="callout-item">
+                                <span class="callout-check">✦</span>
+                                <div><strong>Multi-Camera Calibration:</strong> Dual-angle 3D skeletal tracking for rotational athletics.</div>
+                            </div>
+                            <div class="callout-item">
+                                <span class="callout-check">✦</span>
+                                <div><strong>National Portal Integration:</strong> Export formats compliant with SAI / Khelo India databases.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conclusion Card -->
+                <div class="conclusion-box">
+                    <div class="conclusion-title">Conclusion</div>
+                    <p class="conclusion-text">
+                        The <strong>AI-Powered Fitness Assessment Platform</strong> proves how modern Deep Learning and Computer Vision can transform sports science. By eliminating human observation bias and replacing manual paper recording with automated 17-keypoint pose estimation, joint-angle mathematics, and persistent analytics, the platform provides an accessible, robust, and production-ready solution for coaches and athletes alike.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ================= POSTER FOOTER ================= -->
+        <footer class="poster-footer">
+            <div>
+                MADHAV INSTITUTE OF TECHNOLOGY & SCIENCE, GWALIOR &nbsp;·&nbsp;
+                <span class="footer-highlight">GWALIOR VIGYAN MAHOTSAV 2026</span>
+            </div>
+            <div>
+                ABV-IIITM GWALIOR &nbsp;·&nbsp; VIGYAN BHARATI
+            </div>
+        </footer>
+
+    </div>
+
+</body>
+</html>
