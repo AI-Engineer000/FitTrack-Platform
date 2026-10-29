@@ -43,7 +43,13 @@ def process_frame(frame_data, exercise, state):
     keypoints = []
     if results.keypoints is not None:
         detected_keypoints = results.keypoints.data.cpu().numpy()
-        if len(detected_keypoints) > 0:
+        if len(detected_keypoints) == 1:
+            keypoints = detected_keypoints[0].tolist()
+        elif len(detected_keypoints) > 1 and results.boxes is not None and len(results.boxes) > 0:
+            boxes = results.boxes.xyxy.cpu().numpy()
+            areas = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
+            keypoints = detected_keypoints[int(np.argmax(areas))].tolist()
+        elif len(detected_keypoints) > 0:
             keypoints = detected_keypoints[0].tolist()
 
     if keypoints and "pixels_per_cm" not in state:

@@ -218,7 +218,8 @@ class LiveAssessmentEndpointTests(TestCase):
 
     def test_save_live_assessment_requires_auth(self):
         anonymous_client = self.client_class()
-        response = anonymous_client.post(reverse("dashboard:save_live_assessment"))
+        response = anonymous_client.post(
+            reverse("dashboard:save_live_assessment"))
         self.assertEqual(response.status_code, 401)
 
     def test_save_live_assessment_saves_valid_record(self):
@@ -233,7 +234,8 @@ class LiveAssessmentEndpointTests(TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertTrue(data.get("success"))
-        assessment = Assessment.objects.filter(athlete=self.athlete_a, exercise="Sit-ups").first()
+        assessment = Assessment.objects.filter(
+            athlete=self.athlete_a, exercise="Sit-ups").first()
         self.assertIsNotNone(assessment)
         self.assertEqual(assessment.measurement, 30.0)
 
@@ -260,4 +262,3 @@ class LiveAssessmentEndpointTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 404)
-

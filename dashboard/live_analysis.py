@@ -4,16 +4,18 @@ import numpy as np
 CONFIDENCE_THRESHOLD = 0.5
 KNEE_STRAIGHT_THRESHOLD = 160
 JUMP_START_THRESHOLD_PX = 15
-SITUP_UP_ANGLE = 100.0
-SITUP_DOWN_ANGLE = 140.0
+SITUP_UP_ANGLE = 105.0
+SITUP_DOWN_ANGLE = 135.0
 
 
-def _result(valid, current_value, max_value, unit, state_label, state):
+def _result(valid, current_value, max_value, unit, state_label, state, current_unit=None, max_unit=None):
     return {
         "valid": valid,
         "current_value": current_value,
         "max_value": max_value,
         "unit": unit,
+        "current_unit": current_unit or unit,
+        "max_unit": max_unit or unit,
         "state_label": state_label,
         "state": state,
     }
@@ -185,8 +187,8 @@ def _analyze_situps(keypoints, state):
         state["reps"] += 1
 
     state["phase"] = phase
-    return _result(True, angle, state["reps"], "deg",
-                   "UP" if phase == "up" else "DOWN", state)
+    return _result(True, angle, state["reps"], "reps",
+                   "UP" if phase == "up" else "DOWN", state, current_unit="°", max_unit="reps")
 
 
 def _analyze_sit_reach(keypoints, state):

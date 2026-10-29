@@ -763,16 +763,23 @@
     const ANALYZE_FRAME_URL = "{% url 'dashboard:analyze_frame' %}";
     const SAVE_URL = "{% url 'dashboard:save_live_assessment' %}";
 
-    // COCO 17 Keypoint Skeleton Connections
+    // Biomechanical Body Skeleton Connections (Shoulders, Torso, Arms, Legs)
     const CONNECTIONS = [
-        // Face
-        [0, 1], [0, 2], [1, 3], [2, 4],
         // Torso
-        [5, 6], [5, 11], [6, 12], [11, 12],
+        [5, 6],   // Shoulders
+        [5, 11],  // Left Torso
+        [6, 12],  // Right Torso
+        [11, 12], // Hips
         // Arms
-        [5, 7], [7, 9], [6, 8], [8, 10],
+        [5, 7],   // Left Upper Arm
+        [7, 9],   // Left Forearm
+        [6, 8],   // Right Upper Arm
+        [8, 10],  // Right Forearm
         // Legs
-        [11, 13], [13, 15], [12, 14], [14, 16]
+        [11, 13], // Left Thigh
+        [13, 15], // Left Shin
+        [12, 14], // Right Thigh
+        [14, 16]  // Right Shin
     ];
 
     // State Variables
@@ -876,7 +883,7 @@
 
         // Map keypoints from inference frame coordinate space to displayed screen video bounds
         const mapped = keypoints.map((kp, idx) => {
-            if (!kp || kp.length < 3 || kp[2] < 0.35) return null;
+            if (!kp || kp.length < 3 || kp[2] < 0.45) return null;
             const normX = kp[0] / srcW;
             const normY = kp[1] / srcH;
             return {
@@ -910,11 +917,11 @@
 
         // Draw Joint Nodes
         mapped.forEach((pt) => {
-            if (!pt) return;
+            if (!pt || pt.idx < 5) return;
             ctx.beginPath();
-            const radius = pt.idx === 0 ? 6.5 : (pt.idx >= 11 ? 5 : 4);
+            const radius = pt.idx >= 11 ? 5.5 : 4.5;
             ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
-            ctx.fillStyle = pt.idx === 0 ? "#fbbf24" : (pt.idx >= 11 ? "#fb923c" : "#34d399");
+            ctx.fillStyle = pt.idx >= 11 ? "#fb923c" : "#34d399";
             ctx.fill();
             ctx.strokeStyle = "#ffffff";
             ctx.lineWidth = 1.5;
@@ -1001,10 +1008,12 @@
         }
 
         if (data.analysis && data.analysis.valid) {
+            const curU = data.analysis.current_unit || (EXERCISE_SLUG === "sit-ups" ? "°" : data.analysis.unit);
+            const maxU = data.analysis.max_unit || (EXERCISE_SLUG === "sit-ups" ? "reps" : data.analysis.unit);
             currentValue.innerHTML = (data.analysis.current_value ?? "—")
-                + (data.analysis.unit ? ` <small>${data.analysis.unit}</small>` : "");
+                + (curU ? ` <small>${curU}</small>` : "");
             maxValue.innerHTML = (data.analysis.max_value ?? "—")
-                + (data.analysis.unit ? ` <small>${data.analysis.unit}</small>` : "");
+                + (maxU ? ` <small>${maxU}</small>` : "");
             stateLabel.textContent = data.analysis.state_label || "TRACKING";
         }
 
