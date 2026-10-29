@@ -143,7 +143,7 @@
         }
 
         button:disabled {
-            opacity: 0.7;
+            opacity: 0.6;
             cursor: not-allowed;
             transform: none !important;
         }
@@ -193,7 +193,7 @@
 
         .video-wrap {
             position: relative;
-            background: #0f1411;
+            background: #0b1120;
             border-radius: 16px;
             overflow: hidden;
             aspect-ratio: 4/3;
@@ -207,8 +207,9 @@
         #video {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
             display: block;
+            background: #000;
         }
 
         #overlay {
@@ -256,7 +257,7 @@
             position: absolute;
             bottom: 16px;
             left: 16px;
-            background: rgba(15, 20, 17, 0.75);
+            background: rgba(15, 20, 17, 0.8);
             color: #a7f3d0;
             border: 1px solid rgba(52, 211, 153, 0.3);
             border-radius: 8px;
@@ -275,11 +276,11 @@
             box-shadow: var(--shadow-md);
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            gap: 16px;
         }
 
         .athlete-info {
-            padding-bottom: 16px;
+            padding-bottom: 14px;
             border-bottom: 1px solid var(--border);
         }
 
@@ -308,12 +309,12 @@
 
         .mode-btn {
             flex: 1;
-            padding: 8px 12px;
+            padding: 9px 12px;
             border-radius: 8px;
             border: none;
             background: transparent;
             color: var(--ink-muted);
-            font-size: 0.78rem;
+            font-size: 0.80rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s;
@@ -330,7 +331,134 @@
             border: 1px solid var(--border);
         }
 
-        #camera-overlay {
+        /* Source Control Cards */
+        .source-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .source-card-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--ink-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .camera-selector select {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--ink);
+            font-family: "Inter", sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* Video Upload Controls */
+        .upload-dropzone {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            background: var(--surface);
+            transition: border-color 0.2s, background 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .upload-dropzone:hover {
+            border-color: var(--green);
+            background: var(--green-soft);
+        }
+
+        .upload-dropzone .upload-icon {
+            font-size: 1.6rem;
+        }
+
+        .upload-dropzone .upload-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .upload-dropzone .upload-subtitle {
+            font-size: 0.72rem;
+            color: var(--ink-muted);
+        }
+
+        .video-player-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: var(--surface);
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .video-controls-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .video-scrubber {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            accent-color: var(--green);
+            cursor: pointer;
+        }
+
+        .video-time-text {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--ink-muted);
+            min-width: 75px;
+            text-align: right;
+        }
+
+        .video-control-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-mini {
+            padding: 6px 12px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            color: var(--ink);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-mini:hover {
+            background: var(--green-soft);
+            color: var(--green);
+            border-color: var(--green);
+        }
+
+        #camera-overlay, #video-empty-overlay {
             position: absolute;
             inset: 0;
             z-index: 5;
@@ -345,104 +473,10 @@
             text-align: center;
         }
 
-        #camera-overlay[hidden] { display: none; }
-        #camera-overlay .camera-icon { font-size: 3rem; }
-        #camera-overlay h3 { color: #f8fafc; font-size: 1.5rem; }
-        #camera-overlay p { max-width: 400px; color: #cbd5e1; line-height: 1.5; }
-
-        #toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .toast {
-            max-width: min(420px, calc(100vw - 40px));
-            padding: 12px 20px;
-            border-radius: 8px;
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            font-size: 0.9rem;
-            font-weight: 500;
-            transform: translateX(120%);
-            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        .toast.is-visible { transform: translateX(0); }
-
-        @media (max-width: 600px) {
-            .top-nav { align-items: flex-start; padding: 12px 16px; }
-            .breadcrumbs { line-height: 1.8; }
-            .breadcrumb-divider { margin: 0 5px; }
-            .exit-btn { padding: 8px 10px; }
-        }
-
-        /* Demo Card Controls */
-        .demo-control-card {
-            background: var(--surface-2);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .demo-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.72rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--ink-soft);
-        }
-
-        .demo-badge {
-            background: var(--green-soft);
-            color: var(--green);
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.68rem;
-            font-weight: 700;
-        }
-
-        .demo-desc {
-            font-size: 0.76rem;
-            color: var(--ink-soft);
-            line-height: 1.4;
-        }
-
-        .camera-selector {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .camera-selector label {
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: var(--ink-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
-        .camera-selector select {
-            padding: 10px 12px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--ink);
-            font-family: "Inter", sans-serif;
-            font-size: 0.85rem;
-            cursor: pointer;
-            outline: none;
-        }
+        #camera-overlay[hidden], #video-empty-overlay[hidden] { display: none; }
+        .overlay-icon { font-size: 3rem; }
+        .overlay-heading { color: #f8fafc; font-size: 1.4rem; font-family: "Barlow Condensed", sans-serif; font-weight: 700; }
+        .overlay-desc { max-width: 400px; color: #cbd5e1; font-size: 0.85rem; line-height: 1.5; }
 
         .metrics-grid {
             display: grid;
@@ -512,6 +546,30 @@
 
         .action-row { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
 
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            max-width: min(420px, calc(100vw - 40px));
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transform: translateX(120%);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .toast.is-visible { transform: translateX(0); }
+
         @media (max-width: 1050px) {
             .live-grid { grid-template-columns: 1fr; }
         }
@@ -534,31 +592,42 @@
 
     <header class="live-header">
         <div>
-            <div class="page-label">AI Computer Vision Live Assessment</div>
+            <div class="page-label">AI Computer Vision Assessment</div>
             <h1>
                 {{ exercise_name }}
                 <span style="font-size:0.95rem; font-family:'Inter',sans-serif; font-weight:600; padding:4px 12px; border-radius:20px; background:var(--green-soft); color:var(--green); border:1px solid var(--border);">YOLO26-Pose (17 Keypoints)</span>
             </h1>
         </div>
         <div class="header-actions">
-            <button class="btn btn-secondary" id="themeToggle">Theme</button>
+            <button class="btn btn-secondary" id="themeToggle" type="button">Theme</button>
         </div>
     </header>
 
     <div class="live-grid">
 
         <div class="video-wrap">
-            <video id="video" autoplay playsinline muted></video>
+            <video id="video" playsinline muted></video>
             <canvas id="overlay"></canvas>
+
+            <!-- Camera Overlay (when camera inactive) -->
             <div id="camera-overlay" role="status" aria-live="polite">
-                <div class="camera-icon" aria-hidden="true">📷</div>
-                <h3>Camera Feed Not Detected</h3>
-                <p id="camera-overlay-message">Please check your camera connection or browser permissions to start the assessment.</p>
+                <div class="overlay-icon" aria-hidden="true">📷</div>
+                <h3 class="overlay-heading">Camera Feed Inactive</h3>
+                <p class="overlay-desc" id="camera-overlay-message">Select a camera or grant permissions to begin live webcam assessment.</p>
             </div>
+
+            <!-- Video Empty Overlay (when in video mode but no file selected) -->
+            <div id="video-empty-overlay" hidden role="status">
+                <div class="overlay-icon" aria-hidden="true">🎬</div>
+                <h3 class="overlay-heading">No Exercise Video Selected</h3>
+                <p class="overlay-desc">Upload a prerecorded exercise video (MP4 or WebM) using the panel on the right to start AI analysis.</p>
+            </div>
+
             <div class="status-badge" id="statusBadge">
-                <span class="status-pulse"></span>
+                <span class="status-pulse" id="statusPulse"></span>
                 <span id="statusText">Initializing AI Engine…</span>
             </div>
+
             <div class="hud-overlay-tag" id="hudTag">17 KEYPOINTS · BIOMECHANICS ACTIVE</div>
         </div>
 
@@ -569,12 +638,53 @@
                 <div class="athlete-meta">{{ athlete.athlete_id }} · {{ athlete.sport|default:"General Fitness" }}</div>
             </div>
 
-            <!-- Camera Selector -->
-            <div class="camera-selector" id="cameraSelectorWrap">
-                <label for="cameraSelect">Video Input Source</label>
+            <!-- Mode Selector -->
+            <div class="mode-selector" role="tablist" aria-label="Input Mode">
+                <button type="button" class="mode-btn active" id="modeCameraBtn" role="tab" aria-selected="true">
+                    📷 Live Camera
+                </button>
+                <button type="button" class="mode-btn" id="modeVideoBtn" role="tab" aria-selected="false">
+                    📁 Upload Video
+                </button>
+            </div>
+
+            <!-- Mode A: Camera Selector Card -->
+            <div class="source-card camera-selector" id="cameraSection">
+                <div class="source-card-label">
+                    <span>Camera Source</span>
+                    <span style="font-size:0.68rem; color:var(--green); font-weight:700;">WEBCAM</span>
+                </div>
                 <select id="cameraSelect">
                     <option>Searching webcams…</option>
                 </select>
+            </div>
+
+            <!-- Mode B: Video Upload Card -->
+            <div class="source-card" id="videoUploadSection" style="display: none;">
+                <div class="source-card-label">
+                    <span>Exercise Video</span>
+                    <span style="font-size:0.68rem; color:var(--coral); font-weight:700;">PRERECORDED</span>
+                </div>
+
+                <input type="file" id="videoFileInput" accept="video/mp4,video/webm,video/ogg,video/quicktime" style="display: none;">
+
+                <div class="upload-dropzone" id="uploadDropzone">
+                    <div class="upload-icon">📂</div>
+                    <div class="upload-title" id="uploadTitle">Choose Video File</div>
+                    <div class="upload-subtitle">Supports MP4, WebM, QuickTime</div>
+                </div>
+
+                <div class="video-player-bar" id="videoPlayerBar" style="display: none;">
+                    <div class="video-controls-row">
+                        <input type="range" class="video-scrubber" id="videoScrubber" min="0" max="100" value="0" step="0.1">
+                        <span class="video-time-text" id="videoTimeText">0:00 / 0:00</span>
+                    </div>
+                    <div class="video-control-btns">
+                        <button type="button" class="btn-mini" id="videoPlayPauseBtn">▶ Play & Analyze</button>
+                        <button type="button" class="btn-mini" id="videoRestartBtn">↺ Restart</button>
+                        <button type="button" class="btn-mini" id="videoChangeBtn" style="margin-left:auto;">Change Video</button>
+                    </div>
+                </div>
             </div>
 
             <!-- Metrics Grid -->
@@ -598,7 +708,7 @@
 
             <!-- Action Buttons -->
             <div class="action-row">
-                <button class="btn btn-primary" id="saveBtn">
+                <button class="btn btn-primary" id="saveBtn" type="button">
                     Save Assessment
                 </button>
                 <button class="btn btn-secondary" id="resetBtn" type="button">
@@ -612,32 +722,70 @@
 
 </div>
 
+<div id="toast-container" aria-live="polite" aria-atomic="false"></div>
+
 <script>
+    // DOM Elements
     const video = document.getElementById("video");
     const overlay = document.getElementById("overlay");
+    const cameraSection = document.getElementById("cameraSection");
+    const videoUploadSection = document.getElementById("videoUploadSection");
+    const modeCameraBtn = document.getElementById("modeCameraBtn");
+    const modeVideoBtn = document.getElementById("modeVideoBtn");
     const cameraSelect = document.getElementById("cameraSelect");
-    const cameraSelectorWrap = document.getElementById("cameraSelectorWrap");
+    const cameraOverlay = document.getElementById("camera-overlay");
+    const cameraOverlayMessage = document.getElementById("camera-overlay-message");
+    const videoEmptyOverlay = document.getElementById("video-empty-overlay");
+    const uploadDropzone = document.getElementById("uploadDropzone");
+    const uploadTitle = document.getElementById("uploadTitle");
+    const videoFileInput = document.getElementById("videoFileInput");
+    const videoPlayerBar = document.getElementById("videoPlayerBar");
+    const videoScrubber = document.getElementById("videoScrubber");
+    const videoTimeText = document.getElementById("videoTimeText");
+    const videoPlayPauseBtn = document.getElementById("videoPlayPauseBtn");
+    const videoRestartBtn = document.getElementById("videoRestartBtn");
+    const videoChangeBtn = document.getElementById("videoChangeBtn");
     const currentValue = document.getElementById("currentValue");
     const maxValue = document.getElementById("maxValue");
     const stateLabel = document.getElementById("stateLabel");
     const saveBtn = document.getElementById("saveBtn");
     const resetBtn = document.getElementById("resetBtn");
     const statusText = document.getElementById("statusText");
+    const statusPulse = document.getElementById("statusPulse");
     const hudTag = document.getElementById("hudTag");
-    const cameraOverlay = document.getElementById("camera-overlay");
-    const cameraOverlayMessage = document.getElementById("camera-overlay-message");
 
+    // Constants & Endpoints
     const ATHLETE_ID = "{{ athlete.athlete_id }}";
     const EXERCISE_SLUG = "{{ exercise_slug }}";
     const EXERCISE_NAME = "{{ exercise_name }}";
     const CSRF_TOKEN = "{{ csrf_token }}";
     const CHECK_TASK_URL = "{% url 'dashboard:check_task' 'TASK_ID' %}";
+    const ANALYZE_FRAME_URL = "{% url 'dashboard:analyze_frame' %}";
+    const SAVE_URL = "{% url 'dashboard:save_live_assessment' %}";
 
-    let analysisState = {};
+    // COCO 17 Keypoint Skeleton Connections
+    const CONNECTIONS = [
+        // Face
+        [0, 1], [0, 2], [1, 3], [2, 4],
+        // Torso
+        [5, 6], [5, 11], [6, 12], [11, 12],
+        // Arms
+        [5, 7], [7, 9], [6, 8], [8, 10],
+        // Legs
+        [11, 13], [13, 15], [12, 14], [14, 16]
+    ];
+
+    // State Variables
+    let currentMode = "camera"; // "camera" or "video"
     let stream = null;
-    let sendTimer = null;
-    let busy = false;
+    let videoObjectUrl = null;
+    let inferenceTimer = null;
+    let isProcessing = false;
+    let analysisState = {};
+    let lastSentW = 640;
+    let lastSentH = 480;
 
+    // Toast Notification Utility
     function showToast(message, type = "success") {
         const container = document.getElementById("toast-container");
         const toast = document.createElement("div");
@@ -651,14 +799,10 @@
         setTimeout(() => {
             toast.classList.remove("is-visible");
             setTimeout(() => toast.remove(), 300);
-        }, 3000);
+        }, 3200);
     }
 
-    function setCameraUnavailable(message) {
-        cameraOverlayMessage.textContent = message;
-        cameraOverlay.hidden = false;
-    }
-
+    // Theme Switcher
     document.getElementById("themeToggle").addEventListener("click", function () {
         const current = document.documentElement.getAttribute("data-theme");
         const next = current === "dark" ? "light" : "dark";
@@ -666,136 +810,146 @@
         localStorage.setItem("fittrack-theme", next);
     });
 
-    async function loadCameras() {
-        try {
-            statusText.textContent = "Requesting camera…";
-            const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const cameras = devices.filter(d => d.kind === "videoinput");
-            tempStream.getTracks().forEach(t => t.stop());
+    // ==========================================
+    // 1. SKELETON CANVAS & COORDINATE MAPPING
+    // ==========================================
 
-            cameraSelect.innerHTML = "";
-            if (cameras.length === 0) {
-                cameraSelect.innerHTML = "<option>No camera detected</option>";
-                statusText.textContent = "Camera unavailable";
-                setCameraUnavailable("No camera was detected. Check the connection and browser camera permissions.");
-                return;
-            }
-
-            cameras.forEach((cam, i) => {
-                const opt = document.createElement("option");
-                opt.value = cam.deviceId;
-                opt.textContent = cam.label || `Camera ${i + 1}`;
-                cameraSelect.appendChild(opt);
-            });
-
-            startCamera(cameras[0].deviceId);
-        } catch (err) {
-            console.warn("Camera access error:", err);
-            statusText.textContent = "Camera unavailable";
-            setCameraUnavailable("Camera access failed. Check your connection and browser camera permissions.");
-            showToast("Camera access denied or unavailable.", "error");
+    function resizeOverlay() {
+        const wrap = overlay.parentElement;
+        const targetW = wrap.clientWidth;
+        const targetH = wrap.clientHeight;
+        if (overlay.width !== targetW || overlay.height !== targetH) {
+            overlay.width = targetW;
+            overlay.height = targetH;
         }
     }
 
-    async function startCamera(deviceId) {
-        if (stream) {
-            stream.getTracks().forEach(t => t.stop());
+    window.addEventListener("resize", resizeOverlay);
+
+    function getVideoRenderInfo() {
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        const cw = overlay.parentElement.clientWidth;
+        const ch = overlay.parentElement.clientHeight;
+
+        if (!vw || !vh || !cw || !ch) {
+            return null;
         }
 
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    deviceId: deviceId ? { exact: deviceId } : undefined,
-                    width: { ideal: 640 },
-                    height: { ideal: 480 }
-                }
-            });
-            video.srcObject = stream;
-            statusText.textContent = "Live Camera Active";
-            cameraOverlay.hidden = true;
-            const activeStream = stream;
-            activeStream.getTracks().forEach(track => {
-                track.addEventListener("ended", () => {
-                    if (stream !== activeStream) return;
-                    video.srcObject = null;
-                    statusText.textContent = "Camera disconnected";
-                    setCameraUnavailable("Camera disconnected. Reconnect it or select another camera to continue.");
-                    showToast("Camera disconnected.", "error");
-                });
-            });
-            showToast("Camera connected successfully.", "success");
-        } catch (err) {
-            statusText.textContent = "Camera error: " + err.message;
-            setCameraUnavailable("Camera could not start. Check the connection and browser camera permissions.");
-            showToast("Camera access denied or disconnected.", "error");
+        const videoAspect = vw / vh;
+        const containerAspect = cw / ch;
+
+        let renderW, renderH, offsetX, offsetY;
+        if (containerAspect > videoAspect) {
+            renderH = ch;
+            renderW = ch * videoAspect;
+            offsetX = (cw - renderW) / 2;
+            offsetY = 0;
+        } else {
+            renderW = cw;
+            renderH = cw / videoAspect;
+            offsetX = 0;
+            offsetY = (ch - renderH) / 2;
         }
+
+        return { renderW, renderH, offsetX, offsetY, cw, ch };
     }
 
-    cameraSelect.addEventListener("change", () => {
-        startCamera(cameraSelect.value);
-    });
-
-    document.getElementById("exit-btn").addEventListener("click", function () {
-        stopLiveInference();
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            stream = null;
-            video.srcObject = null;
-        }
-    });
-
-    const CONNECTIONS = [
-        [5, 7], [7, 9], [6, 8], [8, 10], [5, 6], [5, 11], [6, 12], [11, 12], [11, 13], [13, 15], [12, 14], [14, 16]
-    ];
-
-    function drawKeypoints(keypoints) {
+    function clearOverlay() {
+        resizeOverlay();
         const ctx = overlay.getContext("2d");
-        const w = overlay.width = overlay.offsetWidth || 640;
-        const h = overlay.height = overlay.offsetHeight || 480;
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+    }
 
-        ctx.clearRect(0, 0, w, h);
+    function drawKeypoints(keypoints, frameW, frameH) {
+        resizeOverlay();
+        const ctx = overlay.getContext("2d");
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
 
         if (!keypoints || keypoints.length < 17) return;
 
-        ctx.lineWidth = 3;
+        const renderInfo = getVideoRenderInfo();
+        if (!renderInfo) return;
+
+        const srcW = frameW || lastSentW || 640;
+        const srcH = frameH || lastSentH || 480;
+
+        // Map keypoints from inference frame coordinate space to displayed screen video bounds
+        const mapped = keypoints.map((kp, idx) => {
+            if (!kp || kp.length < 3 || kp[2] < 0.35) return null;
+            const normX = kp[0] / srcW;
+            const normY = kp[1] / srcH;
+            return {
+                x: renderInfo.offsetX + (normX * renderInfo.renderW),
+                y: renderInfo.offsetY + (normY * renderInfo.renderH),
+                conf: kp[2],
+                idx: idx
+            };
+        });
+
+        // Draw Skeleton Lines with Glow
+        ctx.save();
+        ctx.lineWidth = 3.5;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
         ctx.strokeStyle = "#10b981";
+        ctx.shadowColor = "rgba(16, 185, 129, 0.45)";
+        ctx.shadowBlur = 6;
 
         CONNECTIONS.forEach(([a, b]) => {
-            const kpA = keypoints[a], kpB = keypoints[b];
-            if (kpA && kpB && kpA[2] > 0.5 && kpB[2] > 0.5) {
+            const pA = mapped[a];
+            const pB = mapped[b];
+            if (pA && pB) {
                 ctx.beginPath();
-                ctx.moveTo(kpA[0], kpA[1]);
-                ctx.lineTo(kpB[0], kpB[1]);
+                ctx.moveTo(pA.x, pA.y);
+                ctx.lineTo(pB.x, pB.y);
                 ctx.stroke();
             }
         });
+        ctx.restore();
 
-        keypoints.forEach((kp, idx) => {
-            if (kp && kp[2] > 0.5) {
-                ctx.beginPath();
-                ctx.arc(kp[0], kp[1], idx === 0 ? 8 : 5, 0, Math.PI * 2);
-                ctx.fillStyle = idx === 0 ? "#fbbf24" : (idx >= 11 ? "#fb923c" : "#34d399");
-                ctx.fill();
-                ctx.strokeStyle = "#ffffff";
-                ctx.lineWidth = 1.5;
-                ctx.stroke();
-            }
+        // Draw Joint Nodes
+        mapped.forEach((pt) => {
+            if (!pt) return;
+            ctx.beginPath();
+            const radius = pt.idx === 0 ? 6.5 : (pt.idx >= 11 ? 5 : 4);
+            ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = pt.idx === 0 ? "#fbbf24" : (pt.idx >= 11 ? "#fb923c" : "#34d399");
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
         });
     }
 
+    // ==========================================
+    // 2. INFERENCE FRAME PROCESSING
+    // ==========================================
+
     async function sendFrame() {
-        if (busy || !video.videoWidth) return;
-        busy = true;
+        if (isProcessing || !video.videoWidth || !video.videoHeight || video.paused || video.ended) {
+            return;
+        }
+
+        isProcessing = true;
 
         try {
-            const tmp = document.createElement("canvas");
-            tmp.width = Math.min(640, video.videoWidth);
-            tmp.height = Math.min(480, video.videoHeight);
-            const ctx = tmp.getContext("2d");
-            ctx.drawImage(video, 0, 0, tmp.width, tmp.height);
+            // Preserve aspect ratio when scaling down frame for model
+            const maxDimension = 640;
+            const scale = Math.min(1, maxDimension / Math.max(video.videoWidth, video.videoHeight));
+            const targetW = Math.round(video.videoWidth * scale);
+            const targetH = Math.round(video.videoHeight * scale);
 
-            const dataUrl = tmp.toDataURL("image/jpeg", 0.65);
+            lastSentW = targetW;
+            lastSentH = targetH;
+
+            const tmp = document.createElement("canvas");
+            tmp.width = targetW;
+            tmp.height = targetH;
+            const ctx = tmp.getContext("2d");
+            ctx.drawImage(video, 0, 0, targetW, targetH);
+
+            const dataUrl = tmp.toDataURL("image/jpeg", 0.70);
             const form = new FormData();
             form.append("frame", dataUrl);
             form.append("exercise", EXERCISE_SLUG);
@@ -803,11 +957,13 @@
             form.append("state", JSON.stringify(analysisState));
             form.append("athlete_id", ATHLETE_ID);
 
-            const res = await fetch("{% url 'dashboard:analyze_frame' %}", {
+            const res = await fetch(ANALYZE_FRAME_URL, {
                 method: "POST",
                 body: form,
                 headers: { "X-CSRFToken": CSRF_TOKEN }
             });
+
+            if (!res.ok) throw new Error("Server error: " + res.status);
 
             const data = await res.json();
             if (data.task_id) {
@@ -819,12 +975,12 @@
         } catch (err) {
             console.warn("Inference frame error:", err);
         } finally {
-            busy = false;
+            isProcessing = false;
         }
     }
 
     async function pollTask(taskId) {
-        const maxAttempts = 30;
+        const maxAttempts = 25;
         const taskUrl = CHECK_TASK_URL.replace("TASK_ID", encodeURIComponent(taskId));
 
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -832,9 +988,9 @@
             const data = await response.json();
             if (!response.ok || data.status === "error") throw new Error("Task failed");
             if (data.status === "complete") return data.result;
-            await new Promise(r => setTimeout(r, 120));
+            await new Promise(r => setTimeout(r, 100));
         }
-        throw new Error("Task timeout");
+        throw new Error("Task polling timeout");
     }
 
     function applyAnalysisResult(data) {
@@ -852,22 +1008,336 @@
             stateLabel.textContent = data.analysis.state_label || "TRACKING";
         }
 
-        if (data.keypoints) {
-            drawKeypoints(data.keypoints);
+        if (data.keypoints && data.keypoints.length > 0) {
+            drawKeypoints(data.keypoints, data.frame_width, data.frame_height);
+        } else {
+            clearOverlay();
         }
     }
 
-    function startLiveInference() {
-        stopLiveInference();
-        sendTimer = setInterval(sendFrame, 250);
+    function startInferenceLoop() {
+        stopInferenceLoop();
+        inferenceTimer = setInterval(sendFrame, 250);
     }
 
-    function stopLiveInference() {
-        if (sendTimer) {
-            clearInterval(sendTimer);
-            sendTimer = null;
+    function stopInferenceLoop() {
+        if (inferenceTimer) {
+            clearInterval(inferenceTimer);
+            inferenceTimer = null;
+        }
+        isProcessing = false;
+    }
+
+    // ==========================================
+    // 3. MODE SWITCHING & CLEANUP
+    // ==========================================
+
+    function setMode(mode) {
+        if (currentMode === mode) return;
+
+        // Clean up previous mode
+        stopInferenceLoop();
+        clearOverlay();
+
+        if (currentMode === "camera") {
+            stopCamera();
+        } else if (currentMode === "video") {
+            stopVideoPlayback();
+        }
+
+        currentMode = mode;
+
+        if (mode === "camera") {
+            modeCameraBtn.classList.add("active");
+            modeCameraBtn.setAttribute("aria-selected", "true");
+            modeVideoBtn.classList.remove("active");
+            modeVideoBtn.setAttribute("aria-selected", "false");
+
+            cameraSection.style.display = "flex";
+            videoUploadSection.style.display = "none";
+            videoEmptyOverlay.hidden = true;
+
+            loadCameras();
+        } else {
+            modeVideoBtn.classList.add("active");
+            modeVideoBtn.setAttribute("aria-selected", "true");
+            modeCameraBtn.classList.remove("active");
+            modeCameraBtn.setAttribute("aria-selected", "false");
+
+            cameraSection.style.display = "none";
+            videoUploadSection.style.display = "flex";
+            cameraOverlay.hidden = true;
+
+            if (!video.src && !videoObjectUrl) {
+                videoEmptyOverlay.hidden = false;
+                statusText.textContent = "Upload Video to Begin";
+            } else {
+                videoEmptyOverlay.hidden = true;
+                statusText.textContent = "Prerecorded Video Ready";
+            }
         }
     }
+
+    modeCameraBtn.addEventListener("click", () => setMode("camera"));
+    modeVideoBtn.addEventListener("click", () => setMode("video"));
+
+    // ==========================================
+    // 4. WEBCAM MANAGEMENT (MODE A)
+    // ==========================================
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(t => t.stop());
+            stream = null;
+        }
+        video.srcObject = null;
+    }
+
+    function setCameraUnavailable(message) {
+        cameraOverlayMessage.textContent = message;
+        cameraOverlay.hidden = false;
+    }
+
+    async function loadCameras() {
+        try {
+            statusText.textContent = "Requesting camera…";
+            const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const cameras = devices.filter(d => d.kind === "videoinput");
+            tempStream.getTracks().forEach(t => t.stop());
+
+            cameraSelect.innerHTML = "";
+            if (cameras.length === 0) {
+                cameraSelect.innerHTML = "<option>No camera detected</option>";
+                statusText.textContent = "Camera unavailable";
+                setCameraUnavailable("No camera was detected. Check connection and browser permissions.");
+                return;
+            }
+
+            cameras.forEach((cam, i) => {
+                const opt = document.createElement("option");
+                opt.value = cam.deviceId;
+                opt.textContent = cam.label || `Camera ${i + 1}`;
+                cameraSelect.appendChild(opt);
+            });
+
+            startCamera(cameras[0].deviceId);
+        } catch (err) {
+            console.warn("Camera access error:", err);
+            statusText.textContent = "Camera unavailable";
+            setCameraUnavailable("Camera access failed. Check connection and permissions, or use Upload Video mode.");
+            showToast("Camera access denied or unavailable.", "error");
+        }
+    }
+
+    async function startCamera(deviceId) {
+        stopCamera();
+
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    deviceId: deviceId ? { exact: deviceId } : undefined,
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                }
+            });
+            video.srcObject = stream;
+            video.play().catch(() => {});
+            statusText.textContent = "Live Camera Active";
+            cameraOverlay.hidden = true;
+
+            const activeStream = stream;
+            activeStream.getTracks().forEach(track => {
+                track.addEventListener("ended", () => {
+                    if (stream !== activeStream) return;
+                    stopCamera();
+                    statusText.textContent = "Camera disconnected";
+                    setCameraUnavailable("Camera disconnected. Reconnect or switch cameras.");
+                    showToast("Camera disconnected.", "error");
+                });
+            });
+
+            showToast("Camera connected successfully.", "success");
+            startInferenceLoop();
+        } catch (err) {
+            statusText.textContent = "Camera error: " + err.message;
+            setCameraUnavailable("Camera could not start. You can use 'Upload Video' mode to demonstrate.");
+            showToast("Camera access error.", "error");
+        }
+    }
+
+    cameraSelect.addEventListener("change", () => {
+        if (currentMode === "camera") {
+            startCamera(cameraSelect.value);
+        }
+    });
+
+    // ==========================================
+    // 5. PRERECORDED VIDEO MANAGEMENT (MODE B)
+    // ==========================================
+
+    function stopVideoPlayback() {
+        video.pause();
+        if (videoObjectUrl) {
+            URL.revokeObjectURL(videoObjectUrl);
+            videoObjectUrl = null;
+        }
+        video.src = "";
+        videoPlayerBar.style.display = "none";
+        uploadTitle.textContent = "Choose Video File";
+    }
+
+    uploadDropzone.addEventListener("click", () => videoFileInput.click());
+
+    uploadDropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadDropzone.style.borderColor = "var(--green)";
+    });
+
+    uploadDropzone.addEventListener("dragleave", () => {
+        uploadDropzone.style.borderColor = "var(--border)";
+    });
+
+    uploadDropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadDropzone.style.borderColor = "var(--border)";
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleVideoFile(e.dataTransfer.files[0]);
+        }
+    });
+
+    videoFileInput.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files[0]) {
+            handleVideoFile(e.target.files[0]);
+        }
+    });
+
+    function formatTime(seconds) {
+        if (!seconds || isNaN(seconds)) return "0:00";
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+    }
+
+    function handleVideoFile(file) {
+        if (!file.type.startsWith("video/")) {
+            showToast("Invalid file type. Please upload a video file (.mp4, .webm).", "error");
+            return;
+        }
+
+        stopInferenceLoop();
+        if (videoObjectUrl) {
+            URL.revokeObjectURL(videoObjectUrl);
+        }
+
+        videoObjectUrl = URL.createObjectURL(file);
+        video.srcObject = null;
+        video.src = videoObjectUrl;
+        video.load();
+
+        uploadTitle.textContent = file.name;
+        videoPlayerBar.style.display = "flex";
+        videoEmptyOverlay.hidden = true;
+        cameraOverlay.hidden = true;
+        statusText.textContent = "Video Loaded — Click Play";
+        videoPlayPauseBtn.textContent = "▶ Play & Analyze";
+
+        // Reset metrics for new video
+        resetAnalysisState();
+        showToast("Video loaded: " + file.name, "success");
+    }
+
+    video.addEventListener("loadedmetadata", () => {
+        resizeOverlay();
+        videoScrubber.value = 0;
+        videoTimeText.textContent = `0:00 / ${formatTime(video.duration)}`;
+    });
+
+    video.addEventListener("timeupdate", () => {
+        if (video.duration) {
+            videoScrubber.value = (video.currentTime / video.duration) * 100;
+            videoTimeText.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+        }
+    });
+
+    videoScrubber.addEventListener("input", () => {
+        if (video.duration) {
+            video.currentTime = (videoScrubber.value / 100) * video.duration;
+        }
+    });
+
+    video.addEventListener("play", () => {
+        statusText.textContent = "Video Playing & Analyzing…";
+        videoPlayPauseBtn.textContent = "⏸ Pause";
+        startInferenceLoop();
+    });
+
+    video.addEventListener("pause", () => {
+        if (!video.ended) {
+            statusText.textContent = "Video Paused";
+            videoPlayPauseBtn.textContent = "▶ Resume";
+        }
+        stopInferenceLoop();
+    });
+
+    video.addEventListener("ended", () => {
+        statusText.textContent = "Analysis Complete — Ready to Save";
+        videoPlayPauseBtn.textContent = "↺ Replay";
+        stopInferenceLoop();
+        showToast("Video completed. You can now save the assessment.", "success");
+    });
+
+    videoPlayPauseBtn.addEventListener("click", () => {
+        if (!video.src) {
+            showToast("Please choose a video file first.", "info");
+            return;
+        }
+        if (video.paused || video.ended) {
+            if (video.ended) {
+                video.currentTime = 0;
+            }
+            video.play().catch(err => showToast("Playback error: " + err.message, "error"));
+        } else {
+            video.pause();
+        }
+    });
+
+    videoRestartBtn.addEventListener("click", () => {
+        if (video.src) {
+            video.currentTime = 0;
+            resetAnalysisState();
+            video.play().catch(() => {});
+        }
+    });
+
+    videoChangeBtn.addEventListener("click", () => {
+        videoFileInput.click();
+    });
+
+    // ==========================================
+    // 6. METRICS RESET & ASSESSMENT SAVING
+    // ==========================================
+
+    function resetAnalysisState() {
+        analysisState = {};
+        currentValue.innerHTML = "—";
+        maxValue.innerHTML = "—";
+        stateLabel.textContent = "READY";
+        clearOverlay();
+    }
+
+    resetBtn.addEventListener("click", () => {
+        resetAnalysisState();
+        statusText.textContent = "Analysis Reset";
+        showToast("Analysis reset successfully.", "info");
+        setTimeout(() => {
+            if (currentMode === "camera") {
+                statusText.textContent = "Live Camera Active";
+            } else if (video.paused) {
+                statusText.textContent = "Video Ready";
+            }
+        }, 1200);
+    });
 
     saveBtn.addEventListener("click", async function () {
         saveBtn.disabled = true;
@@ -879,7 +1349,7 @@
             form.append("exercise", EXERCISE_SLUG);
             form.append("state", JSON.stringify(analysisState));
 
-            const res = await fetch("{% url 'dashboard:save_live_assessment' %}", {
+            const res = await fetch(SAVE_URL, {
                 method: "POST",
                 body: form,
                 headers: { "X-CSRFToken": CSRF_TOKEN }
@@ -887,39 +1357,34 @@
 
             const data = await res.json();
             if (data.success) {
-                showToast("Assessment saved successfully.", "success");
+                showToast("Assessment saved to database successfully!", "success");
                 setTimeout(() => {
                     window.location.href = data.redirect_url;
                 }, 1000);
             } else {
-                showToast(data.error || "Please complete the assessment before saving.", "error");
+                showToast(data.error || "Insufficient movement data to save assessment. Complete the exercise first.", "error");
                 saveBtn.disabled = false;
                 saveBtn.textContent = "Save Assessment";
             }
         } catch (err) {
-            showToast("Save failed: " + err.message, "error");
+            showToast("Save request failed: " + err.message, "error");
             saveBtn.disabled = false;
             saveBtn.textContent = "Save Assessment";
         }
     });
 
-    // Reset Button
-    resetBtn.addEventListener("click", function () {
-        analysisState = {};
-        currentValue.innerHTML = "—";
-        maxValue.innerHTML = "—";
-        stateLabel.textContent = "READY";
-        statusText.textContent = "Reset Done";
-        setTimeout(() => {
-            statusText.textContent = "Live Camera Active";
-        }, 1200);
+    // Exit Button Clean-up
+    document.getElementById("exit-btn").addEventListener("click", function () {
+        stopInferenceLoop();
+        stopCamera();
+        if (videoObjectUrl) {
+            URL.revokeObjectURL(videoObjectUrl);
+        }
     });
 
+    // Page initialization
     loadCameras();
-    startLiveInference();
 </script>
-
-<div id="toast-container" aria-live="polite" aria-atomic="false"></div>
 
 </body>
 </html>

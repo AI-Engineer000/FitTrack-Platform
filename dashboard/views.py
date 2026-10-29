@@ -1,6 +1,7 @@
 import csv
 import json as json_module
-from django.http import JsonResponse
+from django.conf import settings
+from django.http import JsonResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -576,8 +577,11 @@ def analyze_frame(request):
 
         try:
             from dashboard.tasks import analyze_frame_task
-            task = analyze_frame_task.delay(frame_data, exercise, state_raw)
-            return JsonResponse({"task_id": task.id})
+            use_celery = getattr(settings, "USE_CELERY", False)
+            if use_celery:
+                task = analyze_frame_task.apply_async(args=[frame_data, exercise, state_raw], retry=False)
+                return JsonResponse({"task_id": task.id})
+            raise RuntimeError("Celery disabled")
         except Exception:
             state = json_module.loads(state_raw or "{}")
             return _analyze_frame_sync(frame_data, exercise, state)
@@ -621,7 +625,7 @@ def save_live_assessment(request):
         athlete_id = request.POST.get("athlete_id")
         exercise = request.POST.get("exercise", "")
         state_raw = request.POST.get("state", "{}")
-        state = json_module.loads(state_raw)
+        state = json_module.loads(state_raw or "{}")
 
         athlete = get_object_or_404(
             Athlete, athlete_id=athlete_id, trainer=_trainer_for(request))
@@ -651,5 +655,7 @@ def save_live_assessment(request):
             "redirect_url": f"/trainer/athlete/{athlete.id}/",
         })
 
+    except Http404:
+        return JsonResponse({"error": "Athlete not found"}, status=404)
     except Exception as e:
         return JsonResponse({"error": str(e)})

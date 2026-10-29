@@ -179,3 +179,85 @@ class TrainerAccessControlTests(TestCase):
         response = self.client_b.get(
             reverse(f"dashboard:{view_name}", kwargs=route_kwargs))
         self.assertEqual(response.status_code, 404)
+
+
+class LiveAssessmentEndpointTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.user_a = user_model.objects.create_user(
+            username="trainer_live_a",
+            password="testpass123",
+        )
+        self.user_b = user_model.objects.create_user(
+            username="trainer_live_b",
+            password="testpass123",
+        )
+        self.trainer_a = Trainer.objects.get(user=self.user_a)
+        self.trainer_a.full_name = "Trainer Live A"
+        self.trainer_a.save(update_fields=["full_name"])
+        self.trainer_b = Trainer.objects.get(user=self.user_b)
+        self.trainer_b.full_name = "Trainer Live B"
+        self.trainer_b.save(update_fields=["full_name"])
+
+        self.athlete_a = Athlete.objects.create(
+            trainer=self.trainer_a,
+            name="Live Athlete A",
+            athlete_id="LA001",
+            age=22,
+            gender="Male",
+            sport="Running",
+        )
+        self.client_a = self.client_class()
+        self.client_b = self.client_class()
+        self.client_a.force_login(self.user_a)
+        self.client_b.force_login(self.user_b)
+
+    def test_analyze_frame_rejects_non_post(self):
+        response = self.client_a.get(reverse("dashboard:analyze_frame"))
+        self.assertEqual(response.status_code, 405)
+
+    def test_save_live_assessment_requires_auth(self):
+        anonymous_client = self.client_class()
+        response = anonymous_client.post(reverse("dashboard:save_live_assessment"))
+        self.assertEqual(response.status_code, 401)
+
+    def test_save_live_assessment_saves_valid_record(self):
+        response = self.client_a.post(
+            reverse("dashboard:save_live_assessment"),
+            {
+                "athlete_id": self.athlete_a.athlete_id,
+                "exercise": "sit-ups",
+                "state": '{"reps": 30}',
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data.get("success"))
+        assessment = Assessment.objects.filter(athlete=self.athlete_a, exercise="Sit-ups").first()
+        self.assertIsNotNone(assessment)
+        self.assertEqual(assessment.measurement, 30.0)
+
+    def test_save_live_assessment_rejects_empty_data(self):
+        response = self.client_a.post(
+            reverse("dashboard:save_live_assessment"),
+            {
+                "athlete_id": self.athlete_a.athlete_id,
+                "exercise": "sit-ups",
+                "state": "{}",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("error", data)
+
+    def test_save_live_assessment_blocks_cross_trainer(self):
+        response = self.client_b.post(
+            reverse("dashboard:save_live_assessment"),
+            {
+                "athlete_id": self.athlete_a.athlete_id,
+                "exercise": "sit-ups",
+                "state": '{"reps": 30}',
+            },
+        )
+        self.assertEqual(response.status_code, 404)
+

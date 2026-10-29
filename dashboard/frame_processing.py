@@ -29,7 +29,10 @@ def process_frame(frame_data, exercise, state):
 
     if "," in frame_data:
         frame_data = frame_data.split(",", 1)[1]
-    frame_bytes = base64.b64decode(frame_data, validate=True)
+    try:
+        frame_bytes = base64.b64decode(frame_data, validate=True)
+    except Exception:
+        return {"error": "Invalid frame", "keypoints": [], "analysis": {"valid": False, "state": state}}
     frame_array = np.frombuffer(frame_bytes, np.uint8)
     frame = cv2.imdecode(frame_array, cv2.IMREAD_COLOR)
 
@@ -58,4 +61,9 @@ def process_frame(frame_data, exercise, state):
                 state["pixels_per_cm"] = estimate_pixels_per_cm(keypoints)
 
     analysis = analyze_exercise(exercise, keypoints, state)
-    return {"keypoints": keypoints, "analysis": analysis}
+    return {
+        "keypoints": keypoints,
+        "analysis": analysis,
+        "frame_width": frame.shape[1],
+        "frame_height": frame.shape[0],
+    }
