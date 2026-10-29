@@ -239,6 +239,22 @@ class LiveAssessmentEndpointTests(TestCase):
         self.assertIsNotNone(assessment)
         self.assertEqual(assessment.measurement, 30.0)
 
+    def test_save_live_assessment_persists_final_situp_count(self):
+        response = self.client_a.post(
+            reverse("dashboard:save_live_assessment"),
+            {
+                "athlete_id": self.athlete_a.athlete_id,
+                "exercise": "sit-ups",
+                "state": '{"reps": 5, "situp_phase": "bottom"}',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json().get("success"))
+        assessment = Assessment.objects.get(
+            athlete=self.athlete_a, exercise="Sit-ups")
+        self.assertEqual(assessment.measurement, 5.0)
+
     def test_save_live_assessment_rejects_empty_data(self):
         response = self.client_a.post(
             reverse("dashboard:save_live_assessment"),

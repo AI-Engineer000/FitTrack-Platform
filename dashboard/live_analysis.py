@@ -164,7 +164,8 @@ def _analyze_situps(keypoints, state):
         return _invalid(state)
 
     state.setdefault("reps", 0)
-    state.setdefault("phase", "down")
+    if state.get("situp_phase") not in {"seeking_bottom", "bottom", "top"}:
+        state["situp_phase"] = "seeking_bottom"
 
     shoulder = _pick_keypoint(keypoints[5], keypoints[6])
     hip = _pick_keypoint(keypoints[11], keypoints[12])
@@ -178,17 +179,24 @@ def _analyze_situps(keypoints, state):
         return _invalid(state)
 
     angle = round(angle, 1)
-    phase = state["phase"]
+    phase = state["situp_phase"]
 
-    if phase == "down" and angle <= SITUP_UP_ANGLE:
-        phase = "up"
-    elif phase == "up" and angle >= SITUP_DOWN_ANGLE:
-        phase = "down"
+    if phase == "seeking_bottom" and angle >= SITUP_DOWN_ANGLE:
+        phase = "bottom"
+    elif phase == "bottom" and angle <= SITUP_UP_ANGLE:
+        phase = "top"
+    elif phase == "top" and angle >= SITUP_DOWN_ANGLE:
+        phase = "bottom"
         state["reps"] += 1
 
-    state["phase"] = phase
+    state["situp_phase"] = phase
+    label = {
+        "seeking_bottom": "READY",
+        "bottom": "DOWN",
+        "top": "UP",
+    }[phase]
     return _result(True, angle, state["reps"], "reps",
-                   "UP" if phase == "up" else "DOWN", state, current_unit="°", max_unit="reps")
+                   label, state, current_unit="°", max_unit="reps")
 
 
 def _analyze_sit_reach(keypoints, state):

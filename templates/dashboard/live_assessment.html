@@ -789,6 +789,12 @@
     let inferenceTimer = null;
     let isProcessing = false;
     let analysisState = {};
+    let analysisGeneration = 0;
+    let videoSourceGeneration = 0;
+    let videoSeekGeneration = 0;
+    let videoAnalysisPlaying = false;
+    let videoFinalizationPending = false;
+    let lastAnalyzedVideoTime = null;
     let lastSentW = 640;
     let lastSentH = 480;
 
@@ -933,12 +939,36 @@
     // 2. INFERENCE FRAME PROCESSING
     // ==========================================
 
-    async function sendFrame() {
-        if (isProcessing || !video.videoWidth || !video.videoHeight || video.paused || video.ended) {
-            return;
+    async function sendFrame(isFinalVideoFrame = false) {
+        if (isProcessing) {
+            if (currentMode === "video" && videoAnalysisPlaying && !video.paused) {
+                video.pause();
+            }
+            return false;
+        }
+        if (!video.videoWidth || !video.videoHeight) {
+            return false;
+        }
+        if (isFinalVideoFrame) {
+            if (currentMode !== "video" || !video.ended) return false;
+        } else if (video.paused || video.ended) {
+            return false;
+        }
+        if (
+            currentMode === "video"
+            && !isFinalVideoFrame
+            && lastAnalyzedVideoTime !== null
+            && video.currentTime <= lastAnalyzedVideoTime + 0.02
+        ) {
+            return false;
         }
 
         isProcessing = true;
+        const requestGeneration = analysisGeneration;
+        const requestVideoGeneration = videoSourceGeneration;
+        const requestSeekGeneration = videoSeekGeneration;
+        const isVideoFrame = currentMode === "video";
+        const frameTime = video.currentTime;
 
         try {
             // Preserve aspect ratio when scaling down frame for model
@@ -957,6 +987,9 @@
             ctx.drawImage(video, 0, 0, targetW, targetH);
 
             const dataUrl = tmp.toDataURL("image/jpeg", 0.70);
+            if (isVideoFrame && !isFinalVideoFrame && !video.paused) {
+                video.pause();
+            }
             const form = new FormData();
             form.append("frame", dataUrl);
             form.append("exercise", EXERCISE_SLUG);
@@ -973,16 +1006,43 @@
             if (!res.ok) throw new Error("Server error: " + res.status);
 
             const data = await res.json();
-            if (data.task_id) {
-                const result = await pollTask(data.task_id);
-                applyAnalysisResult(result);
-            } else {
-                applyAnalysisResult(data);
+            const result = data.task_id ? await pollTask(data.task_id) : data;
+            if (!result || result.error) {
+                throw new Error(result?.error || "Frame analysis failed");
             }
+            if (
+                requestGeneration === analysisGeneration
+                && requestVideoGeneration === videoSourceGeneration
+            ) {
+                applyAnalysisResult(result);
+                if (isVideoFrame) {
+                    if (requestSeekGeneration !== videoSeekGeneration) {
+                        if (EXERCISE_SLUG === "sit-ups") {
+                            analysisState = {
+                                ...analysisState,
+                                situp_phase: "seeking_bottom",
+                            };
+                        }
+                        lastAnalyzedVideoTime = video.currentTime;
+                    } else {
+                        lastAnalyzedVideoTime = frameTime;
+                    }
+                }
+            }
+            return true;
         } catch (err) {
             console.warn("Inference frame error:", err);
+            return false;
         } finally {
             isProcessing = false;
+            if (
+                currentMode === "video"
+                && videoAnalysisPlaying
+                && !video.ended
+                && video.paused
+            ) {
+                video.play().catch(err => showToast("Playback error: " + err.message, "error"));
+            }
         }
     }
 
@@ -1034,7 +1094,43 @@
             clearInterval(inferenceTimer);
             inferenceTimer = null;
         }
-        isProcessing = false;
+    }
+
+    async function finishVideoAnalysis(sourceGeneration, requestGeneration) {
+        while (
+            isProcessing
+            && sourceGeneration === videoSourceGeneration
+            && requestGeneration === analysisGeneration
+        ) {
+            await new Promise(resolve => setTimeout(resolve, 25));
+        }
+        if (
+            sourceGeneration !== videoSourceGeneration
+            || requestGeneration !== analysisGeneration
+            || currentMode !== "video"
+            || !video.ended
+        ) {
+            return;
+        }
+
+        const needsFinalFrame = lastAnalyzedVideoTime === null
+            || video.currentTime > lastAnalyzedVideoTime + 0.02;
+        if (needsFinalFrame && !await sendFrame(true)) {
+            videoFinalizationPending = false;
+            statusText.textContent = "Final frame analysis failed — assessment may be incomplete";
+            showToast("The final video frame could not be analyzed.", "error");
+            return;
+        }
+        if (
+            sourceGeneration === videoSourceGeneration
+            && requestGeneration === analysisGeneration
+            && video.ended
+        ) {
+            videoFinalizationPending = false;
+            statusText.textContent = "Analysis Complete — Ready to Save";
+            videoPlayPauseBtn.textContent = "↺ Replay";
+            showToast("Video completed. You can now save the assessment.", "success");
+        }
     }
 
     // ==========================================
@@ -1043,6 +1139,9 @@
 
     function setMode(mode) {
         if (currentMode === mode) return;
+
+        analysisGeneration += 1;
+        videoFinalizationPending = false;
 
         // Clean up previous mode
         stopInferenceLoop();
@@ -1186,6 +1285,8 @@
     // ==========================================
 
     function stopVideoPlayback() {
+        videoAnalysisPlaying = false;
+        videoSourceGeneration += 1;
         video.pause();
         if (videoObjectUrl) {
             URL.revokeObjectURL(videoObjectUrl);
@@ -1235,6 +1336,8 @@
         }
 
         stopInferenceLoop();
+        videoAnalysisPlaying = false;
+        videoSourceGeneration += 1;
         if (videoObjectUrl) {
             URL.revokeObjectURL(videoObjectUrl);
         }
@@ -1253,6 +1356,7 @@
 
         // Reset metrics for new video
         resetAnalysisState();
+        lastAnalyzedVideoTime = null;
         showToast("Video loaded: " + file.name, "success");
     }
 
@@ -1269,6 +1373,21 @@
         }
     });
 
+    video.addEventListener("seeking", () => {
+        if (currentMode !== "video") return;
+        videoFinalizationPending = false;
+        videoSeekGeneration += 1;
+        if (EXERCISE_SLUG === "sit-ups") {
+            analysisState = { ...analysisState, situp_phase: "seeking_bottom" };
+        }
+    });
+
+    video.addEventListener("seeked", () => {
+        if (currentMode === "video") {
+            lastAnalyzedVideoTime = video.currentTime;
+        }
+    });
+
     videoScrubber.addEventListener("input", () => {
         if (video.duration) {
             video.currentTime = (videoScrubber.value / 100) * video.duration;
@@ -1276,12 +1395,17 @@
     });
 
     video.addEventListener("play", () => {
+        videoAnalysisPlaying = true;
         statusText.textContent = "Video Playing & Analyzing…";
         videoPlayPauseBtn.textContent = "⏸ Pause";
         startInferenceLoop();
     });
 
     video.addEventListener("pause", () => {
+        if (currentMode === "video" && videoAnalysisPlaying && isProcessing) {
+            return;
+        }
+        videoAnalysisPlaying = false;
         if (!video.ended) {
             statusText.textContent = "Video Paused";
             videoPlayPauseBtn.textContent = "▶ Resume";
@@ -1290,10 +1414,11 @@
     });
 
     video.addEventListener("ended", () => {
-        statusText.textContent = "Analysis Complete — Ready to Save";
-        videoPlayPauseBtn.textContent = "↺ Replay";
+        videoAnalysisPlaying = false;
+        videoFinalizationPending = true;
         stopInferenceLoop();
-        showToast("Video completed. You can now save the assessment.", "success");
+        statusText.textContent = "Finishing final frame analysis…";
+        finishVideoAnalysis(videoSourceGeneration, analysisGeneration);
     });
 
     videoPlayPauseBtn.addEventListener("click", () => {
@@ -1301,13 +1426,17 @@
             showToast("Please choose a video file first.", "info");
             return;
         }
-        if (video.paused || video.ended) {
+        if (!videoAnalysisPlaying) {
             if (video.ended) {
+                videoFinalizationPending = false;
                 video.currentTime = 0;
+                lastAnalyzedVideoTime = null;
             }
             video.play().catch(err => showToast("Playback error: " + err.message, "error"));
         } else {
+            videoAnalysisPlaying = false;
             video.pause();
+            stopInferenceLoop();
         }
     });
 
@@ -1328,7 +1457,10 @@
     // ==========================================
 
     function resetAnalysisState() {
+        analysisGeneration += 1;
+        videoFinalizationPending = false;
         analysisState = {};
+        lastAnalyzedVideoTime = currentMode === "video" ? video.currentTime : null;
         currentValue.innerHTML = "—";
         maxValue.innerHTML = "—";
         stateLabel.textContent = "READY";
@@ -1349,6 +1481,10 @@
     });
 
     saveBtn.addEventListener("click", async function () {
+        if (videoFinalizationPending) {
+            showToast("Please wait for the final video frame analysis to finish.", "info");
+            return;
+        }
         saveBtn.disabled = true;
         saveBtn.textContent = "Saving to Database…";
 
