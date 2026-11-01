@@ -110,10 +110,7 @@
                 <h3>{{ ex.name }}</h3>
 
                 {% if ex.latest %}
-                    <p class="last-score">
-                        Last: <b>{{ ex.latest.score|floatformat:0 }}/100</b>
-                        ({{ ex.latest.result }})
-                    </p>
+                    <p class="last-score">Last: <b>{{ ex.latest.score|floatformat:0 }}/100</b> ({{ ex.latest.result }})</p>
                 {% else %}
                     <p class="last-score muted">Not assessed yet</p>
                 {% endif %}

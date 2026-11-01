@@ -1,11 +1,16 @@
 import numpy as np
+from assessments.scoring import build_assessment_record as _build_assessment_record
 
 
 CONFIDENCE_THRESHOLD = 0.5
 KNEE_STRAIGHT_THRESHOLD = 160
 JUMP_START_THRESHOLD_PX = 15
 SITUP_UP_ANGLE = 105.0
-SITUP_DOWN_ANGLE = 135.0
+SITUP_DOWN_ANGLE = 120.0
+SITUP_ANGLE_HISTORY_SIZE = 3
+BROAD_JUMP_TAKEOFF_DELTA_PX = 12.0
+BROAD_JUMP_LANDING_TOLERANCE_PX = 24.0
+CROSSING_HYSTERESIS_PX = 25.0
 
 
 def _result(valid, current_value, max_value, unit, state_label, state, current_unit=None, max_unit=None):
@@ -26,24 +31,17 @@ def _invalid(state):
 
 
 def estimate_pixels_per_cm(keypoints):
-    """Estimate pixels per cm from nose-to-lowest-ankle height (170 cm)."""
-    if not keypoints or len(keypoints) < 17:
-        return 2.2
-    nose = keypoints[0]
-    ankles = [
-        ankle for ankle in (keypoints[15], keypoints[16])
-        if _keypoint_valid(ankle)
-    ]
-    if _keypoint_valid(nose) and ankles:
-        ankle_y = max(float(ankle[1]) for ankle in ankles)
-        px_height = abs(ankle_y - float(nose[1]))
-        if px_height > 100:
-            return round(px_height / 170.0, 3)
-    return 2.2
+    """Do not infer a real-world scale from an assumed participant height."""
+    return None
 
 
 def _keypoint_valid(kp):
-    return bool(kp) and len(kp) >= 3 and kp[2] >= CONFIDENCE_THRESHOLD
+    return (
+        bool(kp)
+        and len(kp) >= 3
+        and np.isfinite(kp[:3]).all()
+        and kp[2] >= CONFIDENCE_THRESHOLD
+    )
 
 
 def _pick_keypoint(*candidates):
@@ -75,34 +73,13 @@ def _calculate_angle(a, b, c):
     return float(np.degrees(np.arccos(cosine)))
 
 
-def _calculate_score(value, worst, best):
-    if best == worst:
-        return 100.0
-    score = ((value - worst) / (best - worst)) * 100
-    return round(float(np.clip(score, 0, 100)), 2)
-
-
-def _get_result(score):
-    if score >= 80:
-        return "Excellent"
-    if score >= 60:
-        return "Good"
-    if score >= 40:
-        return "Average"
-    return "Needs Improvement"
-
-
 def _analyze_vertical_jump(keypoints, state):
-    """
-    State keys: pixels_per_cm, standing_y, max_jump_px, max_jump_cm
-    """
+    """Track ankle vertical displacement in image pixels, not jump-and-reach height."""
     if not keypoints or len(keypoints) < 17:
         return _invalid(state)
 
-    state.setdefault("pixels_per_cm", estimate_pixels_per_cm(keypoints))
     state.setdefault("standing_y", None)
     state.setdefault("max_jump_px", 0.0)
-    state.setdefault("max_jump_cm", None)
 
     ankle = _pick_keypoint(keypoints[15], keypoints[16])
     if ankle is None:
@@ -115,47 +92,123 @@ def _analyze_vertical_jump(keypoints, state):
     state["max_jump_px"] = max(state["max_jump_px"], current_px)
 
     label = "JUMPING" if current_px >= JUMP_START_THRESHOLD_PX else "READY"
-    pixels_per_cm = state["pixels_per_cm"]
-
-    if pixels_per_cm:
-        current_cm = round(current_px / pixels_per_cm, 2)
-        state["max_jump_cm"] = round(state["max_jump_px"] / pixels_per_cm, 2)
-        return _result(True, current_cm, state["max_jump_cm"], "cm", label, state)
-
-    return _result(True, round(current_px, 1), round(state["max_jump_px"], 1),
-                   "px", label, state)
+    pixels_per_cm = state.get("pixels_per_cm")
+    if pixels_per_cm and state.get("calibration_status") == "estimated":
+        current_cm = round(current_px / pixels_per_cm, 1)
+        max_cm = round(state["max_jump_px"] / pixels_per_cm, 1)
+        state["max_jump_cm"] = max_cm
+        return _result(
+            True,
+            current_cm,
+            max_cm,
+            "cm",
+            label,
+            state,
+        )
+    return _result(
+        True,
+        round(current_px, 1),
+        round(state["max_jump_px"], 1),
+        "px",
+        label,
+        state,
+    )
 
 
 def _analyze_broad_jump(keypoints, state):
-    """Horizontal ankle (15/16) displacement from the takeoff position."""
+    """Measure best horizontal ankle-centre displacement for detected attempts."""
     if not keypoints or len(keypoints) < 17:
         return _invalid(state)
 
-    state.setdefault("pixels_per_cm", estimate_pixels_per_cm(keypoints))
-    state.setdefault("takeoff_x", None)
-    state.setdefault("max_jump_px", 0.0)
-    state.setdefault("max_jump_cm", None)
-
-    ankle = _pick_keypoint(keypoints[15], keypoints[16])
-    if ankle is None:
+    left_ankle = keypoints[15]
+    right_ankle = keypoints[16]
+    if not (_keypoint_valid(left_ankle) and _keypoint_valid(right_ankle)):
         return _invalid(state)
 
-    ankle_x = float(ankle[0])
-    if state["takeoff_x"] is None:
-        state["takeoff_x"] = ankle_x
+    state.setdefault("start_ankle_x", None)
+    state.setdefault("floor_y", None)
+    state.setdefault("airborne", False)
+    state.setdefault("attempt_distance_px", 0.0)
+    state.setdefault("best_distance_px", 0.0)
+    state.setdefault("valid_attempts", 0)
+
+    ankle_x = (float(left_ankle[0]) + float(right_ankle[0])) / 2
+    ankle_y = (float(left_ankle[1]) + float(right_ankle[1])) / 2
+    if state["floor_y"] is None:
+        state["floor_y"] = ankle_y
+        state["start_ankle_x"] = ankle_x
         return _result(True, 0.0, 0.0, "px", "READY", state)
 
-    current_px = max(0.0, ankle_x - state["takeoff_x"])
-    state["max_jump_px"] = max(state["max_jump_px"], current_px)
+    if not state["airborne"]:
+        both_feet_airborne = (
+            state["floor_y"] - float(left_ankle[1])
+            >= BROAD_JUMP_TAKEOFF_DELTA_PX
+            and state["floor_y"] - float(right_ankle[1])
+            >= BROAD_JUMP_TAKEOFF_DELTA_PX
+        )
+        if both_feet_airborne:
+            state["airborne"] = True
+            state["attempt_distance_px"] = 0.0
+            return _result(
+                True,
+                state["best_distance_px"],
+                state["best_distance_px"],
+                "px",
+                "AIRBORNE",
+                state,
+            )
+        return _result(
+            True,
+            state["best_distance_px"],
+            state["best_distance_px"],
+            "px",
+            "READY",
+            state,
+        )
 
-    pixels_per_cm = state["pixels_per_cm"]
-    if pixels_per_cm:
-        current_cm = round(current_px / pixels_per_cm, 2)
-        state["max_jump_cm"] = round(state["max_jump_px"] / pixels_per_cm, 2)
-        return _result(True, current_cm, state["max_jump_cm"], "cm", "JUMPING", state)
+    state["attempt_distance_px"] = abs(ankle_x - state["start_ankle_x"])
+    landed = all(
+        abs(float(point[1]) - state["floor_y"])
+        <= BROAD_JUMP_LANDING_TOLERANCE_PX
+        for point in (left_ankle, right_ankle)
+    )
+    if landed:
+        distance = round(float(state["attempt_distance_px"]), 1)
+        if distance > 0:
+            state["valid_attempts"] += 1
+            state["best_distance_px"] = max(state["best_distance_px"], distance)
+        state["airborne"] = False
+        state["attempt_distance_px"] = 0.0
+        label = "LANDING RECORDED" if distance > 0 else "INVALID LANDING"
+    else:
+        label = "AIRBORNE"
 
-    return _result(True, round(current_px, 1), round(state["max_jump_px"], 1),
-                   "px", "JUMPING", state)
+    current_distance = (
+        float(state["attempt_distance_px"])
+        if state["airborne"]
+        else float(state["best_distance_px"])
+    )
+    pixels_per_cm = state.get("pixels_per_cm")
+    if pixels_per_cm and state.get("calibration_status") == "estimated":
+        best_distance_cm = round(
+            float(state["best_distance_px"]) / pixels_per_cm, 1)
+        state["best_distance_cm"] = best_distance_cm
+        return _result(
+            True,
+            round(current_distance / pixels_per_cm, 1),
+            best_distance_cm,
+            "cm",
+            label,
+            state,
+        )
+    return _result(
+        True,
+        round(current_distance, 1),
+        round(float(state["best_distance_px"]), 1),
+        "px",
+        label,
+        state,
+    )
 
 
 def _analyze_situps(keypoints, state):
@@ -163,31 +216,62 @@ def _analyze_situps(keypoints, state):
     if not keypoints or len(keypoints) < 17:
         return _invalid(state)
 
-    state.setdefault("reps", 0)
+    try:
+        state["reps"] = max(0, int(state.get("reps", 0)))
+        state["completed_cycles"] = max(
+            0, int(state.get("completed_cycles", 0))
+        )
+    except (TypeError, ValueError):
+        return _invalid(state)
     if state.get("situp_phase") not in {"seeking_bottom", "bottom", "top"}:
         state["situp_phase"] = "seeking_bottom"
 
-    shoulder = _pick_keypoint(keypoints[5], keypoints[6])
-    hip = _pick_keypoint(keypoints[11], keypoints[12])
-    knee = _pick_keypoint(keypoints[13], keypoints[14])
-
-    if shoulder is None or hip is None or knee is None:
+    valid_sides = []
+    for shoulder_index, hip_index, knee_index in (
+        (5, 11, 13),
+        (6, 12, 14),
+    ):
+        side = (
+            keypoints[shoulder_index],
+            keypoints[hip_index],
+            keypoints[knee_index],
+        )
+        if all(_keypoint_valid(point) for point in side):
+            valid_sides.append(side)
+    if not valid_sides:
         return _invalid(state)
 
+    shoulder, hip, knee = max(
+        valid_sides,
+        key=lambda side: sum(float(point[2]) for point in side),
+    )
     angle = _calculate_angle(shoulder, hip, knee)
     if angle is None:
         return _invalid(state)
 
-    angle = round(angle, 1)
+    raw_history = state.get("situp_angle_history", [])
+    history = []
+    if isinstance(raw_history, list):
+        for value in raw_history:
+            try:
+                value = float(value)
+            except (TypeError, ValueError):
+                continue
+            if np.isfinite(value) and 0 <= value <= 180:
+                history.append(value)
+    history = (history + [angle])[-SITUP_ANGLE_HISTORY_SIZE:]
+    state["situp_angle_history"] = history
+    angle = round(float(np.median(history)), 1)
     phase = state["situp_phase"]
 
     if phase == "seeking_bottom" and angle >= SITUP_DOWN_ANGLE:
         phase = "bottom"
     elif phase == "bottom" and angle <= SITUP_UP_ANGLE:
         phase = "top"
+        state["reps"] += 1
     elif phase == "top" and angle >= SITUP_DOWN_ANGLE:
         phase = "bottom"
-        state["reps"] += 1
+        state["completed_cycles"] = state.get("completed_cycles", 0) + 1
 
     state["situp_phase"] = phase
     label = {
@@ -195,8 +279,16 @@ def _analyze_situps(keypoints, state):
         "bottom": "DOWN",
         "top": "UP",
     }[phase]
-    return _result(True, angle, state["reps"], "reps",
-                   label, state, current_unit="°", max_unit="reps")
+    return _result(
+        True,
+        angle,
+        state["reps"],
+        "reps",
+        label,
+        state,
+        current_unit="°",
+        max_unit="reps",
+    )
 
 
 def _analyze_sit_reach(keypoints, state):
@@ -230,8 +322,9 @@ def _analyze_sprint(keypoints, state):
     if not keypoints or len(keypoints) < 17:
         return _invalid(state)
 
-    state.setdefault("pixels_per_cm", estimate_pixels_per_cm(keypoints))
+    state.setdefault("pixels_per_cm", None)
     state.setdefault("start_x", None)
+    state.setdefault("start_position_x", None)
     state.setdefault("start_time", None)
     state.setdefault("elapsed_sec", None)
     state.setdefault("finished", False)
@@ -239,6 +332,8 @@ def _analyze_sprint(keypoints, state):
     ankle = _pick_keypoint(keypoints[15], keypoints[16])
     if ankle is None:
         return _invalid(state)
+    if not state["pixels_per_cm"]:
+        return _result(False, None, None, "sec", "CALIBRATION REQUIRED", state)
 
     ankle_x = float(ankle[0])
     now = state.get("now")
@@ -255,12 +350,13 @@ def _analyze_sprint(keypoints, state):
         )
         if displacement_cm < 20:
             return _result(True, 0.0, 0.0, "sec", "READY", state)
+        state["start_position_x"] = ankle_x
         state["start_time"] = float(now)
         return _result(True, 0.0, 0.0, "sec", "RUNNING", state)
 
     pixels_per_cm = state["pixels_per_cm"]
     displacement_cm = (
-        abs(ankle_x - state["start_x"]) / pixels_per_cm
+        abs(ankle_x - state["start_position_x"]) / pixels_per_cm
         if pixels_per_cm else 0.0
     )
     elapsed = round(max(0.0, float(now) - state["start_time"]), 2)
@@ -280,7 +376,6 @@ def _analyze_medicine_ball(keypoints, state):
     if not keypoints or len(keypoints) < 17:
         return _invalid(state)
 
-    state.setdefault("pixels_per_cm", estimate_pixels_per_cm(keypoints))
     state.setdefault("start_x", None)
     state.setdefault("max_throw_px", 0.0)
     state.setdefault("max_throw_cm", None)
@@ -297,14 +392,14 @@ def _analyze_medicine_ball(keypoints, state):
     current_px = max(0.0, wrist_x - state["start_x"])
     state["max_throw_px"] = max(state["max_throw_px"], current_px)
 
-    pixels_per_cm = state["pixels_per_cm"]
-    if pixels_per_cm:
-        current_cm = round(current_px / pixels_per_cm, 2)
-        state["max_throw_cm"] = round(state["max_throw_px"] / pixels_per_cm, 2)
-        return _result(True, current_cm, state["max_throw_cm"], "cm", "THROWING", state)
-
-    return _result(True, round(current_px, 1), round(state["max_throw_px"], 1),
-                   "px", "THROWING", state)
+    return _result(
+        True,
+        round(current_px, 1),
+        round(state["max_throw_px"], 1),
+        "px",
+        "THROWING",
+        state,
+    )
 
 
 def _analyze_shuttle_run(keypoints, state):
@@ -326,7 +421,16 @@ def _analyze_shuttle_run(keypoints, state):
         state["last_side"] = "right"
         return _result(True, 0.0, 0.0, "laps", "READY", state)
 
-    side = "right" if hip_x > state["center_x"] else "left"
+    side = (
+        "right" if hip_x > state["center_x"] + CROSSING_HYSTERESIS_PX
+        else "left" if hip_x < state["center_x"] - CROSSING_HYSTERESIS_PX
+        else None
+    )
+    if side is None:
+        return _result(
+            True, state["crossings"], state["crossings"],
+            "crossings", "RUNNING", state,
+        )
     if state["last_side"] is None:
         state["last_side"] = side
     elif side != state["last_side"]:
@@ -334,7 +438,7 @@ def _analyze_shuttle_run(keypoints, state):
         state["last_side"] = side
 
     crossings = state["crossings"]
-    return _result(True, crossings, crossings, "laps", "RUNNING", state)
+    return _result(True, crossings, crossings, "crossings", "RUNNING", state)
 
 
 def _analyze_endurance_run(keypoints, state):
@@ -357,7 +461,16 @@ def _analyze_endurance_run(keypoints, state):
         state["last_side"] = "right"
         return _result(True, 0.0, 0.0, "laps", "READY", state)
 
-    side = "right" if hip_x > state["center_x"] else "left"
+    side = (
+        "right" if hip_x > state["center_x"] + CROSSING_HYSTERESIS_PX
+        else "left" if hip_x < state["center_x"] - CROSSING_HYSTERESIS_PX
+        else None
+    )
+    if side is None:
+        return _result(
+            True, state["laps"], state["laps"],
+            "round trips", "RUNNING", state,
+        )
     if state["last_side"] is None:
         state["last_side"] = side
     elif side != state["last_side"]:
@@ -366,7 +479,7 @@ def _analyze_endurance_run(keypoints, state):
         state["last_side"] = side
 
     laps = state["laps"]
-    return _result(True, laps, laps, "laps", "RUNNING", state)
+    return _result(True, laps, laps, "round trips", "RUNNING", state)
 
 
 ANALYZERS = {
@@ -388,87 +501,7 @@ def analyze_exercise(exercise, keypoints, state):
     return analyzer(keypoints, state)
 
 
-def _record(measurement, worst, best):
-    score = _calculate_score(measurement, worst, best)
-    return {
-        "measurement": round(float(measurement), 2),
-        "score": score,
-        "result": _get_result(score),
-    }
-
-
-def _seconds_record(seconds):
-    """Lower is better, so the score is computed on the negated time."""
-    if not seconds or seconds <= 0:
-        return None
-    score = _calculate_score(-seconds, -30.0, -6.0)
-    return {
-        "measurement": round(float(seconds), 2),
-        "score": score,
-        "result": _get_result(score),
-    }
-
-
 def build_assessment_record(exercise, state):
-    if exercise == "vertical-jump":
-        jump_cm = state.get("max_jump_cm")
-        if not jump_cm or jump_cm <= 0:
-            px = state.get("max_jump_px", 0) or 0
-            if px > 0:
-                jump_cm = round(px / (state.get("pixels_per_cm") or 2.2), 2)
-        if not jump_cm or jump_cm <= 0:
-            return None
-        return _record(jump_cm, 15, 65)
-
-    if exercise == "broad-jump":
-        jump_cm = state.get("max_jump_cm")
-        if not jump_cm or jump_cm <= 0:
-            px = state.get("max_jump_px", 0) or 0
-            if px > 0:
-                jump_cm = round(px / (state.get("pixels_per_cm") or 2.2), 2)
-        if not jump_cm or jump_cm <= 0:
-            return None
-        return _record(jump_cm, 100, 260)
-
-    if exercise == "sit-ups":
-        reps = state.get("reps") or 0
-        if reps <= 0:
-            return None
-        return _record(reps, 10, 50)
-
-    if exercise == "sit-reach":
-        reach_cm = state.get("max_reach_cm")
-        if not reach_cm or reach_cm <= 0:
-            reach_px = state.get("max_reach_px") or 0
-            if reach_px > 0:
-                reach_cm = round(reach_px / 4.0, 1)
-        if not reach_cm or reach_cm <= 0:
-            return None
-        return _record(reach_cm, 10, 35)
-
-    if exercise == "sprint":
-        return _seconds_record(state.get("elapsed_sec"))
-
-    if exercise == "medicine-ball":
-        throw_cm = state.get("max_throw_cm")
-        if not throw_cm or throw_cm <= 0:
-            px = state.get("max_throw_px", 0) or 0
-            if px > 0:
-                throw_cm = round(px / (state.get("pixels_per_cm") or 2.2), 2)
-        if not throw_cm or throw_cm <= 0:
-            return None
-        return _record(throw_cm, 150, 450)
-
-    if exercise == "shuttle-run":
-        crossings = state.get("crossings") or 0
-        if crossings <= 0:
-            return None
-        return _record(crossings, 4, 20)
-
-    if exercise == "endurance-run":
-        laps = state.get("laps") or 0
-        if laps <= 0:
-            return None
-        return _record(laps, 2, 12)
-
-    return None
+    if exercise == "sprint" and not state.get("pixels_per_cm"):
+        return None
+    return _build_assessment_record(exercise, state)

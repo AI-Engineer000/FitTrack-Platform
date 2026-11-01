@@ -8,6 +8,7 @@ from ultralytics import YOLO
 
 from assessments.models import Assessment
 from athletes.models import Athlete
+from assessments.scoring import build_unbenchmarked_record
 
 
 MODEL_PATH = "yolo26n-pose.pt"
@@ -18,13 +19,6 @@ def keypoint_valid(keypoint):
     return keypoint[2] >= CONFIDENCE_THRESHOLD
 
 
-def calculate_score(speed_mps, min_speed=1.0, max_speed=4.0):
-    if max_speed <= min_speed:
-        raise ValueError("max_speed must be greater than min_speed")
-    score = (speed_mps - min_speed) / (max_speed - min_speed) * 100
-    return round(float(np.clip(score, 0, 100)), 2)
-
-
 def update_crossings(ankle_x, line_a, line_b, direction, crossings):
     """Count a completed lane traversal and turn back toward the other line."""
     if direction == 1 and ankle_x >= max(line_a, line_b):
@@ -32,16 +26,6 @@ def update_crossings(ankle_x, line_a, line_b, direction, crossings):
     if direction == -1 and ankle_x <= min(line_a, line_b):
         return 1, crossings + 1
     return direction, crossings
-
-
-def get_result(score):
-    if score >= 80:
-        return "Excellent"
-    if score >= 60:
-        return "Good"
-    if score >= 40:
-        return "Average"
-    return "Needs Improvement"
 
 
 class Command(BaseCommand):
@@ -181,20 +165,22 @@ class Command(BaseCommand):
 
                     if elapsed >= duration:
                         average_speed = crossings * lane_length / duration
-                        score = calculate_score(average_speed, min_speed, max_speed)
-                        result_text = get_result(score)
+                        record = build_unbenchmarked_record(
+                            average_speed,
+                            "m/s",
+                            "Average speed inferred from counted lane crossings.",
+                            "Timed shuttle course; crossing detection and course distance are unvalidated.",
+                        )
                         Assessment.objects.create(
                             athlete=athlete,
                             exercise="Shuttle Run",
-                            measurement=round(average_speed, 2),
-                            score=score,
-                            result=result_text,
+                            **record,
                         )
                         assessment_saved = True
                         state = "COMPLETE"
                         self.stdout.write(self.style.SUCCESS(
                             f"Complete: {crossings} crossings, "
-                            f"{average_speed:.2f} m/s, score {score:.1f}/100 ({result_text})"
+                            f"{average_speed:.2f} m/s; benchmark unavailable"
                         ))
                 elif state == "COMPLETE":
                     laps = crossings / 2

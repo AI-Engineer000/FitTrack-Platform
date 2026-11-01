@@ -803,8 +803,8 @@
                     </div>
                 </div>
                 <div class="stat-label">Overall Average</div>
-                <div class="stat-value">{{ overall_avg }}<small>/100</small></div>
-                <div class="stat-sub">Mean of all scores</div>
+                <div class="stat-value">{% if overall_avg != None %}{{ overall_avg }}<small>/100</small>{% else %}—{% endif %}</div>
+                <div class="stat-sub">No validated comparable composite score</div>
             </div>
         </section>
 
@@ -863,7 +863,7 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <p class="empty-mini">No athlete data yet.</p>
+                    <p class="empty-mini">No validated comparable scores are available.</p>
                 {% endif %}
             </div>
 
@@ -896,7 +896,7 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <p class="empty-mini">No data available.</p>
+                    <p class="empty-mini">No validated comparable scores are available.</p>
                 {% endif %}
             </div>
         </section>

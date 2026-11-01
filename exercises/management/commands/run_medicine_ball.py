@@ -8,6 +8,7 @@ from ultralytics import YOLO
 
 from assessments.models import Assessment
 from athletes.models import Athlete
+from assessments.scoring import build_unbenchmarked_record
 
 
 MODEL_PATH = "yolo26n.pt"
@@ -15,23 +16,6 @@ PERSON_CLASS = 0
 SPORTS_BALL_CLASS = 32
 CONFIDENCE_THRESHOLD = 0.2
 PERSON_MARGIN_PX = 35
-
-
-def calculate_score(distance_cm, min_distance=0, max_distance=1000):
-    if max_distance <= min_distance:
-        raise ValueError("max_distance must be greater than min_distance")
-    score = (distance_cm - min_distance) / (max_distance - min_distance) * 100
-    return round(float(np.clip(score, 0, 100)), 2)
-
-
-def get_result(score):
-    if score >= 80:
-        return "Excellent"
-    if score >= 60:
-        return "Good"
-    if score >= 40:
-        return "Average"
-    return "Needs Improvement"
 
 
 def choose_ball(ball_boxes, previous_center=None, person_box=None):
@@ -282,20 +266,21 @@ class Command(BaseCommand):
                     assessment_saved = False
                 elif key == ord("s") and state == "IN_FLIGHT" and not assessment_saved:
                     distance_cm = max_horizontal_px / pixels_per_cm
-                    score = calculate_score(distance_cm)
-                    result_text = get_result(score)
+                    record = build_unbenchmarked_record(
+                        distance_cm,
+                        "cm",
+                        "Tracked medicine-ball horizontal displacement.",
+                        "Calibrated image scale; ball tracking result is not ground-truth validated.",
+                    )
                     Assessment.objects.create(
                         athlete=athlete,
                         exercise="Medicine Ball Throw",
-                        measurement=round(distance_cm, 2),
-                        score=score,
-                        result=result_text,
+                        **record,
                     )
                     assessment_saved = True
                     state = "COMPLETE"
                     self.stdout.write(self.style.SUCCESS(
-                        f"Saved: {distance_cm:.1f} cm, score {score:.1f}/100 "
-                        f"({result_text})"
+                        f"Saved: {distance_cm:.1f} cm; benchmark unavailable"
                     ))
                 elif key == ord("r"):
                     state = "CALIBRATING" if pixels_per_cm is None else "READY"

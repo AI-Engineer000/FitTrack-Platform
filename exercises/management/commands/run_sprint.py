@@ -6,6 +6,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from athletes.models import Athlete
 from assessments.models import Assessment
+from assessments.scoring import build_unbenchmarked_record
 
 
 MODEL_PATH = "yolo26n-pose.pt"
@@ -22,24 +23,6 @@ def draw_keypoint(frame, keypoint, label):
     cv2.circle(frame, (x, y), 7, (0, 255, 0), 1)
     cv2.putText(frame, label, (x + 8, y - 8),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-
-
-def calculate_score(time_seconds):
-    best_time = 4.0
-    worst_time = 10.0
-    score = ((worst_time - time_seconds) / (worst_time - best_time)) * 100
-    return round(np.clip(score, 0, 100), 2)
-
-
-def get_result(score):
-    if score >= 80:
-        return "Excellent"
-    elif score >= 60:
-        return "Good"
-    elif score >= 40:
-        return "Average"
-    else:
-        return "Needs Improvement"
 
 
 class Command(BaseCommand):
@@ -166,16 +149,18 @@ class Command(BaseCommand):
                             if ankle_x >= finish_line:
                                 finish_time = current
                                 sprint_time = finish_time - start_time
-                                final_score = calculate_score(sprint_time)
-                                final_result = get_result(final_score)
+                                record = build_unbenchmarked_record(
+                                    sprint_time,
+                                    "s",
+                                    "Elapsed time between configured start and finish lines.",
+                                    "Timed camera crossing protocol; not validated against reference timestamps.",
+                                )
                                 state = "COMPLETE"
 
                                 Assessment.objects.create(
                                     athlete=athlete,
                                     exercise="Sprint",
-                                    measurement=round(sprint_time, 2),
-                                    score=final_score,
-                                    result=final_result,
+                                    **record,
                                 )
 
                                 self.stdout.write("")
@@ -184,9 +169,7 @@ class Command(BaseCommand):
                                     self.style.SUCCESS("SPRINT COMPLETE"))
                                 self.stdout.write(
                                     f"Time: {sprint_time:.2f} sec")
-                                self.stdout.write(
-                                    f"Score: {final_score:.2f}/100")
-                                self.stdout.write(f"Result: {final_result}")
+                                self.stdout.write("Benchmark rating: unavailable")
                                 self.stdout.write(self.style.SUCCESS("Saved"))
                                 self.stdout.write("=" * 40)
 

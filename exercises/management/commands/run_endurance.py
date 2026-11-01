@@ -8,6 +8,7 @@ from ultralytics import YOLO
 
 from assessments.models import Assessment
 from athletes.models import Athlete
+from assessments.scoring import build_unbenchmarked_record
 
 
 MODEL_PATH = "yolo26n-pose.pt"
@@ -17,23 +18,6 @@ CROSSING_HYSTERESIS_PX = 12
 
 def keypoint_valid(keypoint):
     return keypoint[2] >= CONFIDENCE_THRESHOLD
-
-
-def calculate_score(distance_m, min_distance=800, max_distance=2400):
-    if max_distance <= min_distance:
-        raise ValueError("max_distance must be greater than min_distance")
-    score = (distance_m - min_distance) / (max_distance - min_distance) * 100
-    return round(float(np.clip(score, 0, 100)), 2)
-
-
-def get_result(score):
-    if score >= 80:
-        return "Excellent"
-    if score >= 60:
-        return "Good"
-    if score >= 40:
-        return "Average"
-    return "Needs Improvement"
 
 
 def update_lap_count(ankle_x, finish_line, last_side, laps):
@@ -169,20 +153,22 @@ class Command(BaseCommand):
                         status = f"Time {elapsed:.1f}/{duration:g}s | Laps {laps}"
                     if elapsed >= duration:
                         distance = laps * track_length
-                        score = calculate_score(distance, min_distance, max_distance)
-                        result_text = get_result(score)
+                        record = build_unbenchmarked_record(
+                            distance,
+                            "m",
+                            "Course distance calculated from lap count and configured track length.",
+                            "Timed endurance course; lap detection and course length are unvalidated.",
+                        )
                         Assessment.objects.create(
                             athlete=athlete,
                             exercise="Endurance Run",
-                            measurement=round(distance, 2),
-                            score=score,
-                            result=result_text,
+                            **record,
                         )
                         assessment_saved = True
                         state = "COMPLETE"
                         self.stdout.write(self.style.SUCCESS(
                             f"Complete: {laps} laps, {distance:.0f} m, "
-                            f"score {score:.1f}/100 ({result_text})"
+                            "benchmark unavailable"
                         ))
                 else:
                     status = f"Done: {laps} laps | {distance:.0f} m | {score:.1f}/100"

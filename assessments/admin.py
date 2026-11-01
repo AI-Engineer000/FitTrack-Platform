@@ -9,16 +9,22 @@ class AssessmentAdmin(admin.ModelAdmin):
         "athlete",
         "exercise",
         "measurement",
+        "measurement_unit",
+        "measurement_status",
         "score",
         "result",
+        "benchmark_status",
+        "scoring_method_version",
         "created_at",
     )
 
     list_filter = (
         "exercise",
         "result",
+        "measurement_status",
+        "benchmark_status",
     )
     search_fields = (
-        "athlete_name",
-        "athlete_athlete_id",
+        "athlete__name",
+        "athlete__athlete_id",
     )

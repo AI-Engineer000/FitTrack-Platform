@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from athletes.models import Athlete
 from assessments.models import Assessment
+from assessments.scoring import build_unbenchmarked_record
 
 
 MODEL_PATH = "yolo26n-pose.pt"
@@ -49,24 +50,6 @@ def calculate_angle(a, b, c):
     cosine_angle = np.clip(cosine_angle, -1.0, 1.0)
     angle_radians = np.arccos(cosine_angle)
     return np.degrees(angle_radians)
-
-
-def calculate_score(reach_cm):
-    min_reach = 0
-    max_reach = 35
-    score = ((reach_cm - min_reach) / (max_reach - min_reach)) * 100
-    return round(np.clip(score, 0, 100), 2)
-
-
-def get_result(score):
-    if score >= 80:
-        return "Excellent"
-    elif score >= 60:
-        return "Good"
-    elif score >= 40:
-        return "Average"
-    else:
-        return "Needs Improvement"
 
 
 class Command(BaseCommand):
@@ -376,15 +359,16 @@ class Command(BaseCommand):
 
             elif key == ord("s"):
                 if state == "REACHING" and max_reach_cm:
-                    final_score = calculate_score(max_reach_cm)
-                    final_result = get_result(final_score)
-
+                    record = build_unbenchmarked_record(
+                        max_reach_cm,
+                        "cm",
+                        "Wrist displacement from the starting position.",
+                        "Known-length object calibration; not validated against a sit-and-reach box.",
+                    )
                     Assessment.objects.create(
                         athlete=athlete,
                         exercise="Sit & Reach",
-                        measurement=max_reach_cm,
-                        score=final_score,
-                        result=final_result,
+                        **record,
                     )
 
                     state = "COMPLETE"
@@ -393,8 +377,7 @@ class Command(BaseCommand):
                     self.stdout.write("=" * 40)
                     self.stdout.write(self.style.SUCCESS("COMPLETE"))
                     self.stdout.write(f"Reach: {max_reach_cm:.2f} cm")
-                    self.stdout.write(f"Score: {final_score:.2f}/100")
-                    self.stdout.write(f"Result: {final_result}")
+                    self.stdout.write("Benchmark rating: unavailable")
                     self.stdout.write(self.style.SUCCESS("Saved"))
                     self.stdout.write("=" * 40)
 

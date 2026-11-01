@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from athletes.models import Athlete
 from assessments.models import Assessment
+from assessments.scoring import build_unbenchmarked_record
 
 
 MODEL_PATH = "yolo26n-pose.pt"
@@ -29,26 +30,6 @@ def draw_line(frame, point1, point2, color=(255, 255, 255)):
     x1, y1 = int(point1[0]), int(point1[1])
     x2, y2 = int(point2[0]), int(point2[1])
     cv2.line(frame, (x1, y1), (x2, y2), color, 2)
-
-
-def calculate_score(jump_height_cm):
-    min_jump_cm = 0
-    max_jump_cm = 60
-    score = ((jump_height_cm - min_jump_cm) /
-             (max_jump_cm - min_jump_cm)) * 100
-    score = np.clip(score, 0, 100)
-    return round(score, 2)
-
-
-def get_result(score):
-    if score >= 80:
-        return "Excellent"
-    elif score >= 60:
-        return "Good"
-    elif score >= 40:
-        return "Average"
-    else:
-        return "Needs Improvement"
 
 
 def calculate_angle(a, b, c):
@@ -499,16 +480,17 @@ class Command(BaseCommand):
                     self.stdout.write(f"Jump started ({selected_side} side)")
 
             elif key == ord("s"):
-                if state == "JUMPING" and max_jump_cm is not None:
-                    final_score = calculate_score(max_jump_cm)
-                    final_result = get_result(final_score)
-
+                if state == "JUMPING" and max_jump_cm is not None and max_jump_cm > 0:
+                    record = build_unbenchmarked_record(
+                        max_jump_cm,
+                        "cm",
+                        "Maximum ankle vertical displacement from standing baseline.",
+                        "Known-length object calibration; video result is not ground-truth validated.",
+                    )
                     Assessment.objects.create(
                         athlete=athlete,
                         exercise="Vertical Jump",
-                        measurement=max_jump_cm,
-                        score=final_score,
-                        result=final_result,
+                        **record,
                     )
 
                     state = "COMPLETE"
@@ -517,8 +499,7 @@ class Command(BaseCommand):
                     self.stdout.write("=" * 40)
                     self.stdout.write(self.style.SUCCESS("COMPLETE"))
                     self.stdout.write(f"Jump: {max_jump_cm:.2f} cm")
-                    self.stdout.write(f"Score: {final_score:.2f}/100")
-                    self.stdout.write(f"Result: {final_result}")
+                    self.stdout.write("Benchmark rating: unavailable")
                     self.stdout.write(self.style.SUCCESS("Saved to database"))
                     self.stdout.write("=" * 40)
                     self.stdout.write("")

@@ -6,6 +6,7 @@ from io import StringIO
 
 from athletes.models import Athlete
 from assessments.models import Assessment
+from assessments.scoring import calculate_exercise_score
 from trainers.models import Trainer
 
 
@@ -115,6 +116,105 @@ class TrainerAccessControlTests(TestCase):
             item["athlete"].pk for item in response.context["athlete_summary"]}
         self.assertEqual(athlete_ids, {self.athlete_b.pk})
 
+    def test_dashboard_progress_counts_distinct_recorded_valid_exercises(self):
+        Assessment.objects.create(
+            athlete=self.athlete_a,
+            exercise="Sit-ups",
+            measurement=30,
+            measurement_unit="reps",
+            measurement_status="valid",
+            result="Benchmark unavailable",
+        )
+        Assessment.objects.create(
+            athlete=self.athlete_a,
+            exercise="Sit & Reach",
+            measurement=24,
+            measurement_unit="cm",
+            measurement_status="uncalibrated",
+            result="Benchmark unavailable",
+        )
+        Assessment.objects.create(
+            athlete=self.athlete_a,
+            exercise="Broad Jump",
+            measurement=180,
+            measurement_unit="cm",
+            measurement_status="invalid",
+            result="Invalid",
+        )
+
+        overview = self.client_a.get(reverse("dashboard:trainer_dashboard"))
+        detail = self.client_a.get(
+            reverse(
+                "dashboard:athlete_detail",
+                kwargs={"athlete_id": self.athlete_a.id},
+            )
+        )
+        summary = overview.context["athlete_summary"][0]
+        rows = {
+            row["name"]: row for row in detail.context["exercise_rows"]
+        }
+
+        self.assertEqual(summary["completed"], 3)
+        self.assertEqual(summary["assessment_count"], 4)
+        self.assertEqual(detail.context["completed_count"], 3)
+        self.assertEqual(detail.context["assessment_count"], 4)
+        self.assertTrue(rows["Vertical Jump"]["completed"])
+        self.assertTrue(rows["Sit-ups"]["completed"])
+        self.assertTrue(rows["Sit & Reach"]["completed"])
+        self.assertFalse(rows["Broad Jump"]["completed"])
+        self.assertContains(detail, "Latest attempt not counted (Invalid)")
+        self.assertContains(detail, "42.0")
+        self.assertContains(detail, "Historical score unverified:")
+        self.assertContains(detail, "81/100")
+        self.assertNotContains(detail, 'class="mini-ring"')
+        self.assertNotContains(detail, "Composite Score")
+        self.assertNotContains(detail, "Validated rating")
+        self.assertNotContains(detail, "Benchmark source")
+        self.assertNotContains(overview, "Composite score")
+        self.assertContains(overview, "Assessment records")
+
+    def test_single_provisional_score_renders_without_chart_division_error(self):
+        Assessment.objects.create(
+            athlete=self.athlete_a,
+            exercise="Sit-ups",
+            measurement=30,
+            measurement_unit="reps",
+            measurement_status="valid",
+            score=60,
+            result="Average (Provisional)",
+            benchmark_status="available",
+            benchmark_rating="Average",
+            benchmark_source="General Fitness Reference",
+            scoring_method_version="general-reference-provisional-v1",
+            details={
+                "reference_rating": {
+                    "disclaimer": (
+                        "General reference-based rating. "
+                        "Not a medical diagnosis."
+                    ),
+                },
+            },
+        )
+
+        response = self.client_a.get(
+            reverse(
+                "dashboard:athlete_detail",
+                kwargs={"athlete_id": self.athlete_a.id},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        chart = response.context["exercise_charts"][0]
+        self.assertEqual(chart["count"], 1)
+        self.assertEqual(chart["points"][0]["x"], 250.0)
+        self.assertContains(response, "Average · Reference-Based Rating")
+        self.assertContains(response, "General Fitness Reference")
+        self.assertContains(response, "Not a medical diagnosis")
+        self.assertContains(
+            response,
+            "Requires clinical validation for diagnostic use",
+        )
+
     def test_cross_access_athlete_detail_returns_404(self):
         self.assert_cross_access_404("athlete_detail")
 
@@ -146,14 +246,9 @@ class TrainerAccessControlTests(TestCase):
         self.assertEqual(response_a.context["total_assessments"], 1)
         self.assertEqual(response_b.context["total_athletes"], 1)
         self.assertEqual(response_b.context["total_assessments"], 1)
-        self.assertEqual(
-            [athlete.pk for athlete in response_a.context["top_athletes"]],
-            [self.athlete_a.pk],
-        )
-        self.assertEqual(
-            [athlete.pk for athlete in response_b.context["top_athletes"]],
-            [self.athlete_b.pk],
-        )
+        self.assertEqual(response_a.context["top_athletes"], [])
+        self.assertEqual(response_b.context["top_athletes"], [])
+        self.assertIsNone(response_a.context["overall_avg"])
 
     def test_csv_export_contains_only_own_assessments(self):
         response_a = self.client_a.get(reverse("dashboard:export_csv"))
@@ -238,6 +333,43 @@ class LiveAssessmentEndpointTests(TestCase):
             athlete=self.athlete_a, exercise="Sit-ups").first()
         self.assertIsNotNone(assessment)
         self.assertEqual(assessment.measurement, 30.0)
+        self.assertEqual(assessment.measurement_unit, "reps")
+        self.assertEqual(assessment.score, 60)
+        self.assertEqual(assessment.benchmark_rating, "Average")
+        self.assertEqual(assessment.benchmark_source, "General Fitness Reference")
+        self.assertEqual(assessment.benchmark_status, "available")
+        self.assertEqual(
+            assessment.scoring_method_version,
+            "general-reference-provisional-v1",
+        )
+        self.assertIn(
+            "Not a medical diagnosis",
+            assessment.details["reference_rating"]["disclaimer"],
+        )
+
+    def test_reference_score_requires_supported_gender_and_matching_unit(self):
+        matching = calculate_exercise_score("sit_ups", 30, "Male", "reps")
+        unsupported_gender = calculate_exercise_score(
+            "sit_ups", 30, "Other", "reps")
+        mismatched_unit = calculate_exercise_score(
+            "sit_ups", 30, "Male", "cm")
+
+        self.assertEqual(
+            (matching["score"], matching["rating"]),
+            (60, "Average"),
+        )
+        self.assertTrue(matching["is_provisional"])
+        self.assertIn("not a medical diagnosis", matching["disclaimer"])
+        self.assertIsNone(unsupported_gender["score"])
+        self.assertEqual(unsupported_gender["rating"], "Unavailable")
+        self.assertTrue(unsupported_gender["is_provisional"])
+        self.assertIsNone(mismatched_unit["score"])
+        self.assertEqual(mismatched_unit["rating"], "Unavailable")
+        unavailable = calculate_exercise_score(
+            "unknown_exercise", 30, "Male", "reps")
+        self.assertIsNone(unavailable["score"])
+        self.assertEqual(unavailable["rating"], "Unavailable")
+        self.assertTrue(unavailable["is_provisional"])
 
     def test_save_live_assessment_persists_final_situp_count(self):
         response = self.client_a.post(
@@ -245,7 +377,7 @@ class LiveAssessmentEndpointTests(TestCase):
             {
                 "athlete_id": self.athlete_a.athlete_id,
                 "exercise": "sit-ups",
-                "state": '{"reps": 5, "situp_phase": "bottom"}',
+                "state": '{"reps": 5, "completed_cycles": 4, "situp_phase": "top"}',
             },
         )
 
@@ -254,6 +386,12 @@ class LiveAssessmentEndpointTests(TestCase):
         assessment = Assessment.objects.get(
             athlete=self.athlete_a, exercise="Sit-ups")
         self.assertEqual(assessment.measurement, 5.0)
+        self.assertEqual(assessment.details["completed_cycles"], 4)
+        self.assertEqual(
+            response.json()["assessment"]["measurement"],
+            assessment.measurement,
+        )
+        self.assertEqual(response.json()["assessment"]["score"], 15)
 
     def test_save_live_assessment_rejects_empty_data(self):
         response = self.client_a.post(
@@ -264,7 +402,7 @@ class LiveAssessmentEndpointTests(TestCase):
                 "state": "{}",
             },
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 422)
         data = response.json()
         self.assertIn("error", data)
 
@@ -278,3 +416,58 @@ class LiveAssessmentEndpointTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 404)
+
+    def test_body_measurements_are_saved_without_fitness_scores(self):
+        response = self.client_a.post(
+            reverse(
+                "dashboard:add_body_measurements",
+                kwargs={"athlete_id": self.athlete_a.id},
+            ),
+            {"height": "175", "weight": "70"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        height = Assessment.objects.get(
+            athlete=self.athlete_a, exercise="Height")
+        weight = Assessment.objects.get(
+            athlete=self.athlete_a, exercise="Weight")
+        self.assertEqual((height.measurement, height.measurement_unit), (175, "cm"))
+        self.assertEqual((weight.measurement, weight.measurement_unit), (70, "kg"))
+        self.assertIsNone(height.score)
+        self.assertIsNone(weight.score)
+        self.assertEqual(height.result, "Measurement only")
+        self.assertEqual(weight.result, "Measurement only")
+
+    def test_history_detail_and_csv_display_saved_unavailable_score_consistently(self):
+        Assessment.objects.create(
+            athlete=self.athlete_a,
+            exercise="Sit-ups",
+            measurement=3,
+            measurement_unit="reps",
+            measurement_status="valid",
+            score=None,
+            result="Benchmark unavailable",
+            benchmark_status="unavailable",
+        )
+
+        history = self.client_a.get(reverse("dashboard:history"))
+        detail = self.client_a.get(
+            reverse(
+                "dashboard:athlete_detail",
+                kwargs={"athlete_id": self.athlete_a.id},
+            )
+        )
+        export = self.client_a.get(reverse("dashboard:export_csv"))
+
+        self.assertEqual(history.status_code, 200)
+        self.assertContains(history, "3.0 reps")
+        self.assertContains(history, "Benchmark unavailable")
+        self.assertEqual(detail.status_code, 200)
+        self.assertContains(detail, "3.0 reps")
+        self.assertContains(detail, "Assessment records")
+        self.assertContains(detail, "Exercises assessed")
+        self.assertNotContains(detail, "Composite Score")
+        rows = list(csv.reader(StringIO(export.content.decode("utf-8-sig"))))
+        self.assertIn("Unit", rows[0])
+        self.assertIn("Benchmark Status", rows[0])
+        self.assertEqual(rows[1][4:8], ["3.0", "reps", "valid", ""])

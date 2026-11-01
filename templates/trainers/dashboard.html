@@ -1181,19 +1181,19 @@
 
                             <div class="athlete-metrics">
                                 <div>
-                                    <div class="metric-label">Avg Score</div>
-                                    {% if item.avg_score %}
-                                        <div class="metric-value">{{ item.avg_score }}<small>/100</small></div>
-                                    {% else %}
-                                        <div class="metric-value empty">—</div>
-                                    {% endif %}
-                                </div>
-                                <div>
-                                    <div class="metric-label">Completed</div>
+                                    <div class="metric-label">Exercises assessed</div>
                                     <div class="metric-value">{{ item.completed }}<small>/{{ item.total_exercises }}</small></div>
-                                    <div class="progress-bar">
+                                    <div class="progress-bar" role="progressbar"
+                                         aria-label="Exercises assessed"
+                                         aria-valuemin="0"
+                                         aria-valuemax="{{ item.total_exercises }}"
+                                         aria-valuenow="{{ item.completed }}">
                                         <div class="progress-bar-fill" style="width: {% widthratio item.completed item.total_exercises 100 %}%"></div>
                                     </div>
+                                </div>
+                                <div>
+                                    <div class="metric-label">Assessment records</div>
+                                    <div class="metric-value">{{ item.assessment_count }}</div>
                                 </div>
                             </div>
 

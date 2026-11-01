@@ -19,7 +19,7 @@ class _FakeTensor:
         return self.value
 
 
-def test_process_frame_persists_height_based_scale_in_analysis_state():
+def test_process_frame_does_not_invent_physical_scale_from_person_height():
     keypoints = np.zeros((1, 17, 3), dtype=float)
     keypoints[0, :, 2] = 0.9
     keypoints[0, 0, 1] = 100
@@ -40,9 +40,65 @@ def test_process_frame_persists_height_based_scale_in_analysis_state():
     ):
         result = process_frame(image_data, "vertical-jump", {})
 
-    assert result["analysis"]["state"]["pixels_per_cm"] == 2.0
+    assert "pixels_per_cm" not in result["analysis"]["state"]
+    assert result["analysis"]["unit"] == "px"
     assert result["frame_width"] == 640
     assert result["frame_height"] == 480
+
+
+def test_process_frame_estimates_scale_from_confident_upright_pose():
+    keypoints = np.zeros((1, 17, 3), dtype=float)
+    keypoints[0, :, 2] = 0.9
+    keypoints[0, 0] = [100, 50, 0.9]
+    keypoints[0, [5, 6]] = [100, 100, 0.9]
+    keypoints[0, [11, 12]] = [100, 200, 0.9]
+    keypoints[0, [13, 14]] = [100, 300, 0.9]
+    keypoints[0, [15, 16]] = [100, 450, 0.9]
+    fake_results = SimpleNamespace(
+        keypoints=SimpleNamespace(data=_FakeTensor(keypoints))
+    )
+    def fake_model(frame, verbose=False): return [fake_results]
+    image_data = base64.b64encode(b"mock-image").decode("ascii")
+
+    with (
+        patch("dashboard.frame_processing.cv2.imdecode",
+              return_value=np.zeros((480, 640, 3), dtype=np.uint8)),
+        patch("dashboard.frame_processing._get_yolo_model",
+              return_value=fake_model),
+    ):
+        calibrated = process_frame(
+            image_data, "vertical-jump", {}, athlete_height_cm=200)
+
+    assert calibrated["analysis"]["state"]["pixels_per_cm"] == 2.0
+    assert calibrated["analysis"]["state"]["calibration_status"] == "estimated"
+    assert calibrated["analysis"]["unit"] == "cm"
+
+
+def test_process_frame_does_not_estimate_scale_from_non_upright_pose():
+    keypoints = np.zeros((1, 17, 3), dtype=float)
+    keypoints[0, :, 2] = 0.9
+    keypoints[0, 0] = [100, 50, 0.9]
+    keypoints[0, [5, 6]] = [100, 200, 0.9]
+    keypoints[0, [11, 12]] = [100, 200, 0.9]
+    keypoints[0, [13, 14]] = [100, 300, 0.9]
+    keypoints[0, [15, 16]] = [100, 450, 0.9]
+    fake_results = SimpleNamespace(
+        keypoints=SimpleNamespace(data=_FakeTensor(keypoints))
+    )
+    def fake_model(frame, verbose=False): return [fake_results]
+    image_data = base64.b64encode(b"mock-image").decode("ascii")
+
+    with (
+        patch("dashboard.frame_processing.cv2.imdecode",
+              return_value=np.zeros((480, 640, 3), dtype=np.uint8)),
+        patch("dashboard.frame_processing._get_yolo_model",
+              return_value=fake_model),
+    ):
+        result = process_frame(
+            image_data, "vertical-jump", {}, athlete_height_cm=200)
+
+    assert "pixels_per_cm" not in result["analysis"]["state"]
+    assert result["analysis"]["unit"] == "px"
 
 
 def test_process_frame_handles_invalid_image_data():
@@ -88,7 +144,7 @@ def test_process_frame_preserves_situp_state_between_serialized_requests():
         SimpleNamespace(
             keypoints=SimpleNamespace(data=_FakeTensor(situp_keypoints(angle)))
         )
-        for angle in (160, 90, 160)
+        for angle in (160, 160, 90, 90)
     ]
     def fake_model(frame, verbose=False):
         return [frame_results.pop(0)]
@@ -102,10 +158,10 @@ def test_process_frame_preserves_situp_state_between_serialized_requests():
         ),
         patch("dashboard.frame_processing._get_yolo_model", return_value=fake_model),
     ):
-        for _ in range(3):
+        for _ in range(4):
             result = process_frame(
                 image_data, "sit-ups", json.dumps(state))
             state = result["analysis"]["state"]
 
     assert state["reps"] == 1
-    assert state["situp_phase"] == "bottom"
+    assert state["situp_phase"] == "top"

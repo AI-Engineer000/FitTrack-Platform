@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from athletes.models import Athlete
 from assessments.models import Assessment
+from assessments.scoring import build_unbenchmarked_record
 
 
 MODEL_PATH = "yolo26n-pose.pt"
@@ -44,25 +45,6 @@ def calculate_angle(a, b, c):
     cosine_angle = dot_product / (norm_ba * norm_bc)
     cosine_angle = np.clip(cosine_angle, -1.0, 1.0)
     return np.degrees(np.arccos(cosine_angle))
-
-
-def calculate_score(distance_cm):
-    min_distance = 0
-    max_distance = 250
-    score = ((distance_cm - min_distance) /
-             (max_distance - min_distance)) * 100
-    return round(np.clip(score, 0, 100), 2)
-
-
-def get_result(score):
-    if score >= 80:
-        return "Excellent"
-    elif score >= 60:
-        return "Good"
-    elif score >= 40:
-        return "Average"
-    else:
-        return "Needs Improvement"
 
 
 class Command(BaseCommand):
@@ -312,15 +294,16 @@ class Command(BaseCommand):
 
             elif key == ord("s"):
                 if state == "JUMPING" and max_distance_cm:
-                    final_score = calculate_score(max_distance_cm)
-                    final_result = get_result(final_score)
-
+                    record = build_unbenchmarked_record(
+                        max_distance_cm,
+                        "cm",
+                        "Horizontal ankle displacement from take-off position.",
+                        "Known-length object calibration; detected movement is not ground-truth validated.",
+                    )
                     Assessment.objects.create(
                         athlete=athlete,
                         exercise="Broad Jump",
-                        measurement=max_distance_cm,
-                        score=final_score,
-                        result=final_result,
+                        **record,
                     )
 
                     state = "COMPLETE"
@@ -329,8 +312,7 @@ class Command(BaseCommand):
                     self.stdout.write("=" * 40)
                     self.stdout.write(self.style.SUCCESS("COMPLETE"))
                     self.stdout.write(f"Distance: {max_distance_cm:.2f} cm")
-                    self.stdout.write(f"Score: {final_score:.2f}/100")
-                    self.stdout.write(f"Result: {final_result}")
+                    self.stdout.write("Benchmark rating: unavailable")
                     self.stdout.write(self.style.SUCCESS("Saved"))
                     self.stdout.write("=" * 40)
 

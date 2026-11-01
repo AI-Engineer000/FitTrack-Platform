@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from athletes.models import Athlete
 from assessments.models import Assessment
+from assessments.scoring import build_unbenchmarked_record
 
 
 MODEL_PATH = "yolo26n-pose.pt"
@@ -56,25 +57,6 @@ def calculate_angle(a, b, c):
     angle_radians = np.arccos(cosine_angle)
     angle_degrees = np.degrees(angle_radians)
     return angle_degrees
-
-
-def calculate_score(repetitions):
-    min_reps = 0
-    max_reps = 30
-    score = (repetitions / max_reps) * 100
-    score = np.clip(score, 0, 100)
-    return round(score, 2)
-
-
-def get_result(score):
-    if score >= 80:
-        return "Excellent"
-    elif score >= 60:
-        return "Good"
-    elif score >= 40:
-        return "Average"
-    else:
-        return "Needs Improvement"
 
 
 class Command(BaseCommand):
@@ -309,15 +291,16 @@ class Command(BaseCommand):
 
             elif key == ord("s"):
                 if repetitions > 0 and not assessment_saved:
-                    final_score = calculate_score(repetitions)
-                    final_result = get_result(final_score)
-
+                    record = build_unbenchmarked_record(
+                        repetitions,
+                        "reps",
+                        "Repetitions counted by the legacy command's pose rule.",
+                        "Legacy webcam protocol; not validated against annotated repetitions.",
+                    )
                     Assessment.objects.create(
                         athlete=athlete,
                         exercise="Sit-ups",
-                        measurement=float(repetitions),
-                        score=final_score,
-                        result=final_result,
+                        **record,
                     )
 
                     assessment_saved = True
@@ -326,8 +309,7 @@ class Command(BaseCommand):
                     self.stdout.write("=" * 40)
                     self.stdout.write(self.style.SUCCESS("COMPLETE"))
                     self.stdout.write(f"Repetitions: {repetitions}")
-                    self.stdout.write(f"Score: {final_score:.2f}/100")
-                    self.stdout.write(f"Result: {final_result}")
+                    self.stdout.write("Benchmark rating: unavailable")
                     self.stdout.write(self.style.SUCCESS("Saved to database"))
                     self.stdout.write("=" * 40)
                     self.stdout.write("")

@@ -640,12 +640,32 @@
                     <div class="exercise-card-info">
                         <h3>{{ ex.name }}</h3>
                         <span class="exercise-card-category">
-                            {% if ex.latest %}{{ ex.latest.result }}{% else %}Not assessed yet{% endif %}
+                            {% if ex.latest.scoring_method_version == "general-reference-provisional-v1" %}
+                                <span title="Based on configured general fitness reference ranges. Requires clinical validation for diagnostic use.">
+                                    {{ ex.latest.benchmark_rating }} · Reference-Based Rating
+                                </span>
+                            {% elif ex.latest.score != None %}
+                                Historical score unverified
+                            {% elif ex.latest %}
+                                Measurement recorded
+                            {% else %}
+                                Not assessed yet
+                            {% endif %}
                         </span>
                     </div>
 
                     {% if ex.latest %}
-                        <p class="exercise-card-score">Last score: <b>{{ ex.latest.score|floatformat:0 }}/100</b></p>
+                        <p class="exercise-card-score">
+                            Measurement: <b>{{ ex.latest.measurement|floatformat:1 }} {{ ex.latest.measurement_unit }}</b>
+                            {% if ex.latest.score != None %}
+                                {% if ex.latest.scoring_method_version == "general-reference-provisional-v1" %}
+                                    · Provisional score: <b>{{ ex.latest.score|floatformat:0 }}/100</b>
+                                    <small>{{ ex.latest.benchmark_source }} · {{ ex.latest.details.reference_rating.disclaimer }}</small>
+                                {% else %}
+                                    · Historical score unverified: <b>{{ ex.latest.score|floatformat:0 }}/100</b>
+                                {% endif %}
+                            {% endif %}
+                        </p>
                     {% else %}
                         <p class="exercise-card-score muted">No previous score</p>
                     {% endif %}

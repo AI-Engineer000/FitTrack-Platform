@@ -648,6 +648,28 @@
                 </button>
             </div>
 
+            <div class="source-card">
+                <label for="athleteHeightInput" class="source-card-label">
+                    Athlete height for scale estimate (cm)
+                </label>
+                <input
+                    type="number"
+                    id="athleteHeightInput"
+                    min="100"
+                    max="250"
+                    step="0.1"
+                    inputmode="decimal"
+                    placeholder="Enter measured height"
+                    style="width:100%;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--ink);"
+                >
+                <div class="upload-subtitle">
+                    Estimate only: stand fully upright, side-on, with head and both ankles visible. Nose-to-ankle span and camera perspective limit accuracy.
+                </div>
+                <div class="upload-subtitle" id="calibrationStatus">
+                    No scale estimate yet.
+                </div>
+            </div>
+
             <!-- Mode A: Camera Selector Card -->
             <div class="source-card camera-selector" id="cameraSection">
                 <div class="source-card-label">
@@ -695,9 +717,13 @@
                 </div>
 
                 <div class="metric-card">
-                    <div class="metric-label">Peak / Reps</div>
+                    <div class="metric-label" id="maxMetricLabel">Peak / Reps</div>
                     <div class="metric-value coral" id="maxValue">—</div>
                 </div>
+            </div>
+            <div class="metric-card" id="situpCycleCard" style="display:none;">
+                <div class="metric-label">Completed lower-return cycles</div>
+                <div class="metric-value" id="completedCyclesValue">0</div>
             </div>
 
             <!-- State Banner -->
@@ -742,11 +768,16 @@
     const videoPlayerBar = document.getElementById("videoPlayerBar");
     const videoScrubber = document.getElementById("videoScrubber");
     const videoTimeText = document.getElementById("videoTimeText");
+    const athleteHeightInput = document.getElementById("athleteHeightInput");
+    const calibrationStatus = document.getElementById("calibrationStatus");
     const videoPlayPauseBtn = document.getElementById("videoPlayPauseBtn");
     const videoRestartBtn = document.getElementById("videoRestartBtn");
     const videoChangeBtn = document.getElementById("videoChangeBtn");
     const currentValue = document.getElementById("currentValue");
     const maxValue = document.getElementById("maxValue");
+    const maxMetricLabel = document.getElementById("maxMetricLabel");
+    const situpCycleCard = document.getElementById("situpCycleCard");
+    const completedCyclesValue = document.getElementById("completedCyclesValue");
     const stateLabel = document.getElementById("stateLabel");
     const saveBtn = document.getElementById("saveBtn");
     const resetBtn = document.getElementById("resetBtn");
@@ -762,6 +793,7 @@
     const CHECK_TASK_URL = "{% url 'dashboard:check_task' 'TASK_ID' %}";
     const ANALYZE_FRAME_URL = "{% url 'dashboard:analyze_frame' %}";
     const SAVE_URL = "{% url 'dashboard:save_live_assessment' %}";
+    const KEYPOINT_CONFIDENCE_THRESHOLD = 0.5;
 
     // Biomechanical Body Skeleton Connections (Shoulders, Torso, Arms, Legs)
     const CONNECTIONS = [
@@ -794,9 +826,17 @@
     let videoSeekGeneration = 0;
     let videoAnalysisPlaying = false;
     let videoFinalizationPending = false;
+    let videoAnalysisComplete = false;
+    let invalidHeightNotified = false;
     let lastAnalyzedVideoTime = null;
     let lastSentW = 640;
     let lastSentH = 480;
+    let previousSkeleton = [];
+
+    if (EXERCISE_SLUG === "sit-ups") {
+        maxMetricLabel.textContent = "Upper-position reps";
+        situpCycleCard.style.display = "flex";
+    }
 
     // Toast Notification Utility
     function showToast(message, type = "success") {
@@ -879,7 +919,10 @@
         const ctx = overlay.getContext("2d");
         ctx.clearRect(0, 0, overlay.width, overlay.height);
 
-        if (!keypoints || keypoints.length < 17) return;
+        if (!keypoints || keypoints.length < 17) {
+            previousSkeleton = [];
+            return;
+        }
 
         const renderInfo = getVideoRenderInfo();
         if (!renderInfo) return;
@@ -889,16 +932,24 @@
 
         // Map keypoints from inference frame coordinate space to displayed screen video bounds
         const mapped = keypoints.map((kp, idx) => {
-            if (!kp || kp.length < 3 || kp[2] < 0.45) return null;
+            if (
+                !kp
+                || kp.length < 3
+                || kp[2] < KEYPOINT_CONFIDENCE_THRESHOLD
+            ) return null;
             const normX = kp[0] / srcW;
             const normY = kp[1] / srcH;
+            const x = renderInfo.offsetX + (normX * renderInfo.renderW);
+            const y = renderInfo.offsetY + (normY * renderInfo.renderH);
+            const previous = previousSkeleton[idx];
             return {
-                x: renderInfo.offsetX + (normX * renderInfo.renderW),
-                y: renderInfo.offsetY + (normY * renderInfo.renderH),
+                x: previous ? previous.x * 0.4 + x * 0.6 : x,
+                y: previous ? previous.y * 0.4 + y * 0.6 : y,
                 conf: kp[2],
                 idx: idx
             };
         });
+        previousSkeleton = mapped;
 
         // Draw Skeleton Lines with Glow
         ctx.save();
@@ -963,6 +1014,22 @@
             return false;
         }
 
+        const athleteHeightCm = athleteHeightInput.value.trim();
+        if (athleteHeightCm) {
+            const height = Number(athleteHeightCm);
+            if (!Number.isFinite(height) || height < 100 || height > 250) {
+                if (!invalidHeightNotified) {
+                    showToast(
+                        "Enter an athlete height between 100 and 250 cm.",
+                        "error",
+                    );
+                    invalidHeightNotified = true;
+                }
+                return false;
+            }
+        }
+        invalidHeightNotified = false;
+
         isProcessing = true;
         const requestGeneration = analysisGeneration;
         const requestVideoGeneration = videoSourceGeneration;
@@ -993,9 +1060,14 @@
             const form = new FormData();
             form.append("frame", dataUrl);
             form.append("exercise", EXERCISE_SLUG);
-            analysisState.now = performance.now() / 1000;
+            analysisState.now = isVideoFrame
+                ? frameTime
+                : performance.now() / 1000;
             form.append("state", JSON.stringify(analysisState));
             form.append("athlete_id", ATHLETE_ID);
+            if (athleteHeightCm) {
+                form.append("athlete_height_cm", athleteHeightCm);
+            }
 
             const res = await fetch(ANALYZE_FRAME_URL, {
                 method: "POST",
@@ -1013,20 +1085,11 @@
             if (
                 requestGeneration === analysisGeneration
                 && requestVideoGeneration === videoSourceGeneration
+                && (!isVideoFrame || requestSeekGeneration === videoSeekGeneration)
             ) {
                 applyAnalysisResult(result);
                 if (isVideoFrame) {
-                    if (requestSeekGeneration !== videoSeekGeneration) {
-                        if (EXERCISE_SLUG === "sit-ups") {
-                            analysisState = {
-                                ...analysisState,
-                                situp_phase: "seeking_bottom",
-                            };
-                        }
-                        lastAnalyzedVideoTime = video.currentTime;
-                    } else {
-                        lastAnalyzedVideoTime = frameTime;
-                    }
+                    lastAnalyzedVideoTime = frameTime;
                 }
             }
             return true;
@@ -1065,6 +1128,13 @@
 
         if (data.analysis && data.analysis.state) {
             analysisState = data.analysis.state;
+            if (analysisState.calibration_method === "nose_to_ankle_height") {
+                calibrationStatus.textContent =
+                    `Estimated scale: ${analysisState.pixels_per_cm.toFixed(2)} px/cm. Approximate only; not physical calibration.`;
+            } else if (athleteHeightInput.value.trim()) {
+                calibrationStatus.textContent =
+                    "Waiting for a confident, fully upright pose with head and both ankles visible.";
+            }
         }
 
         if (data.analysis && data.analysis.valid) {
@@ -1076,10 +1146,18 @@
                 + (maxU ? ` <small>${maxU}</small>` : "");
             stateLabel.textContent = data.analysis.state_label || "TRACKING";
         }
+        if (data.analysis && !data.analysis.valid) {
+            stateLabel.textContent = data.analysis.state_label || "NO DATA";
+        }
+        if (EXERCISE_SLUG === "sit-ups" && data.analysis?.state) {
+            completedCyclesValue.textContent =
+                data.analysis.state.completed_cycles ?? 0;
+        }
 
         if (data.keypoints && data.keypoints.length > 0) {
             drawKeypoints(data.keypoints, data.frame_width, data.frame_height);
         } else {
+            previousSkeleton = [];
             clearOverlay();
         }
     }
@@ -1127,6 +1205,8 @@
             && video.ended
         ) {
             videoFinalizationPending = false;
+            videoAnalysisComplete = true;
+            saveBtn.disabled = false;
             statusText.textContent = "Analysis Complete — Ready to Save";
             videoPlayPauseBtn.textContent = "↺ Replay";
             showToast("Video completed. You can now save the assessment.", "success");
@@ -1154,6 +1234,7 @@
         }
 
         currentMode = mode;
+        resetAnalysisState();
 
         if (mode === "camera") {
             modeCameraBtn.classList.add("active");
@@ -1164,6 +1245,7 @@
             cameraSection.style.display = "flex";
             videoUploadSection.style.display = "none";
             videoEmptyOverlay.hidden = true;
+            saveBtn.disabled = false;
 
             loadCameras();
         } else {
@@ -1175,6 +1257,7 @@
             cameraSection.style.display = "none";
             videoUploadSection.style.display = "flex";
             cameraOverlay.hidden = true;
+            saveBtn.disabled = !videoAnalysisComplete;
 
             if (!video.src && !videoObjectUrl) {
                 videoEmptyOverlay.hidden = false;
@@ -1337,6 +1420,8 @@
 
         stopInferenceLoop();
         videoAnalysisPlaying = false;
+        videoAnalysisComplete = false;
+        saveBtn.disabled = true;
         videoSourceGeneration += 1;
         if (videoObjectUrl) {
             URL.revokeObjectURL(videoObjectUrl);
@@ -1377,9 +1462,9 @@
         if (currentMode !== "video") return;
         videoFinalizationPending = false;
         videoSeekGeneration += 1;
-        if (EXERCISE_SLUG === "sit-ups") {
-            analysisState = { ...analysisState, situp_phase: "seeking_bottom" };
-        }
+        videoAnalysisComplete = false;
+        saveBtn.disabled = true;
+        resetAnalysisState();
     });
 
     video.addEventListener("seeked", () => {
@@ -1396,6 +1481,8 @@
 
     video.addEventListener("play", () => {
         videoAnalysisPlaying = true;
+        videoAnalysisComplete = false;
+        if (currentMode === "video") saveBtn.disabled = true;
         statusText.textContent = "Video Playing & Analyzing…";
         videoPlayPauseBtn.textContent = "⏸ Pause";
         startInferenceLoop();
@@ -1430,7 +1517,7 @@
             if (video.ended) {
                 videoFinalizationPending = false;
                 video.currentTime = 0;
-                lastAnalyzedVideoTime = null;
+                resetAnalysisState();
             }
             video.play().catch(err => showToast("Playback error: " + err.message, "error"));
         } else {
@@ -1460,9 +1547,22 @@
         analysisGeneration += 1;
         videoFinalizationPending = false;
         analysisState = {};
+        previousSkeleton = [];
+        calibrationStatus.textContent = athleteHeightInput.value.trim()
+            ? "Scale estimate will be recalculated from an upright pose."
+            : "No scale estimate yet.";
+        if (currentMode === "video") {
+            videoAnalysisComplete = false;
+            saveBtn.disabled = true;
+        }
+
+        athleteHeightInput.addEventListener("change", () => {
+            resetAnalysisState();
+        });
         lastAnalyzedVideoTime = currentMode === "video" ? video.currentTime : null;
         currentValue.innerHTML = "—";
         maxValue.innerHTML = "—";
+        completedCyclesValue.textContent = "0";
         stateLabel.textContent = "READY";
         clearOverlay();
     }
@@ -1481,6 +1581,10 @@
     });
 
     saveBtn.addEventListener("click", async function () {
+        if (currentMode === "video" && !videoAnalysisComplete) {
+            showToast("Complete video analysis before saving.", "info");
+            return;
+        }
         if (videoFinalizationPending) {
             showToast("Please wait for the final video frame analysis to finish.", "info");
             return;
