@@ -10,6 +10,14 @@ class Profile(models.Model):
     )
     phone = models.CharField(max_length=20, blank=True, default="")
     organization = models.CharField(max_length=100, blank=True, default="")
+    profile_picture = models.ImageField(
+        upload_to="profile_pics/",
+        null=True,
+        blank=True,
+    )
+    bio = models.TextField(blank=True, default="")
+    specialization = models.CharField(max_length=100, blank=True, default="")
+    years_experience = models.PositiveSmallIntegerField(default=0)
     profile_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 

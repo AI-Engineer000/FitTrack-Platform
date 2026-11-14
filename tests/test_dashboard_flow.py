@@ -1,8 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from unittest.mock import patch
 import csv
 from io import StringIO
+import re
 
 from athletes.models import Athlete
 from assessments.models import Assessment
@@ -42,6 +44,40 @@ class DashboardFlowTests(TestCase):
         self.assertEqual(response.status_code, 302)
         athlete = Athlete.objects.get(athlete_id="A-1001")
         self.assertEqual(athlete.trainer, self.trainer)
+        self.assertEqual(athlete.user.username, "A-1001")
+        self.assertEqual(athlete.user.email, "A-1001@fittrack.local")
+        self.assertRegex(athlete.user.password, re.compile(r"^pbkdf2_sha256\$"))
+
+        dashboard_response = self.client.get(response.url)
+        self.assertEqual(dashboard_response.status_code, 200)
+        account_message = list(dashboard_response.context["messages"])[0]
+        self.assertIn("Athlete Added! Login Username: A-1001", str(account_message))
+        temporary_password = str(account_message).split(
+            "Temporary Password: ", 1
+        )[1].split(". Please save this now", 1)[0]
+        self.assertEqual(len(temporary_password), 8)
+        self.assertTrue(athlete.user.check_password(temporary_password))
+        self.assertNotContains(
+            self.client.get(reverse("dashboard:trainer_dashboard")),
+            temporary_password,
+        )
+
+    def test_add_athlete_rejects_an_existing_username_without_creating_athlete(self):
+        get_user_model().objects.create_user(username="A-1002")
+
+        response = self.client.post(
+            reverse("dashboard:add_athlete"),
+            {
+                "name": "Duplicate Login",
+                "athlete_id": "A-1002",
+                "age": 20,
+                "gender": "Other",
+                "sport": "Track",
+            },
+        )
+
+        self.assertRedirects(response, reverse("dashboard:add_athlete"))
+        self.assertFalse(Athlete.objects.filter(athlete_id="A-1002").exists())
 
     def test_dashboard_profile_and_history_routes_exist(self):
         self.assertTrue(reverse("dashboard:profile"))
@@ -250,6 +286,52 @@ class TrainerAccessControlTests(TestCase):
         self.assertEqual(response_b.context["top_athletes"], [])
         self.assertIsNone(response_a.context["overall_avg"])
 
+    def test_reports_average_only_comparable_scores_and_link_athlete_pdf(self):
+        for score in (60, 80):
+            Assessment.objects.create(
+                athlete=self.athlete_a,
+                exercise="Broad Jump",
+                measurement=180,
+                measurement_status="valid",
+                score=score,
+                result="Average",
+                benchmark_status="available",
+                benchmark_rating="Average",
+                scoring_method_version="general-reference-provisional-v1",
+            )
+        Assessment.objects.create(
+            athlete=self.athlete_a,
+            exercise="Sit-ups",
+            measurement=30,
+            measurement_status="invalid",
+            score=100,
+            result="Invalid",
+            benchmark_status="available",
+            benchmark_rating="Excellent",
+            scoring_method_version="general-reference-provisional-v1",
+        )
+
+        response = self.client_a.get(reverse("dashboard:reports"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total_athletes"], 1)
+        self.assertEqual(response.context["total_assessments"], 4)
+        self.assertEqual(response.context["overall_average"], 70)
+        report = response.context["athlete_reports"][0]
+        self.assertEqual(report["athlete"], self.athlete_a)
+        self.assertEqual(report["total_assessments"], 4)
+        self.assertEqual(report["avg_score"], 70)
+        self.assertContains(response, "Athlete-wise Assessment Reports")
+        self.assertContains(response, "Avg. Score (Comparable)")
+        self.assertContains(response, "Download PDF")
+        self.assertContains(
+            response,
+            reverse(
+                "dashboard:download_athlete_pdf",
+                kwargs={"athlete_id": self.athlete_a.pk},
+            ),
+        )
+
     def test_csv_export_contains_only_own_assessments(self):
         response_a = self.client_a.get(reverse("dashboard:export_csv"))
         response_b = self.client_b.get(reverse("dashboard:export_csv"))
@@ -310,6 +392,97 @@ class LiveAssessmentEndpointTests(TestCase):
     def test_analyze_frame_rejects_non_post(self):
         response = self.client_a.get(reverse("dashboard:analyze_frame"))
         self.assertEqual(response.status_code, 405)
+
+    def test_analyze_frame_passes_form_assessment_in_json_response(self):
+        analysis = {
+            "valid": True,
+            "form_status": "WARNING",
+            "coaching_cue": "Go deeper",
+            "detected_issue": "Incomplete sit-up depth",
+            "confidence": 0.9,
+            "state": {},
+        }
+        with patch(
+            "dashboard.frame_processing.process_frame",
+            return_value={"keypoints": [], "analysis": analysis},
+        ) as process_frame:
+            response = self.client_a.post(
+                reverse("dashboard:analyze_frame"),
+                {"frame": "frame-data", "exercise": "sit-ups", "state": "{}"},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["analysis"], analysis)
+        process_frame.assert_called_once_with(
+            "frame-data", "sit-ups", {}, 170.0)
+
+    def test_analyze_frame_uses_latest_saved_athlete_height(self):
+        Assessment.objects.create(
+            athlete=self.athlete_a,
+            exercise="Height",
+            measurement=180,
+            measurement_unit="cm",
+            measurement_status="valid",
+            result="Measurement only",
+        )
+        with patch(
+            "dashboard.frame_processing.process_frame",
+            return_value={"keypoints": [], "analysis": {}},
+        ) as process_frame:
+            response = self.client_a.post(
+                reverse("dashboard:analyze_frame"),
+                {
+                    "frame": "frame-data",
+                    "exercise": "vertical-jump",
+                    "state": "{}",
+                    "athlete_id": str(self.athlete_a.id),
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        process_frame.assert_called_once_with(
+            "frame-data", "vertical-jump", {}, 180.0)
+
+    def test_analyze_frame_falls_back_when_athlete_has_no_saved_height(self):
+        with patch(
+            "dashboard.frame_processing.process_frame",
+            return_value={"keypoints": [], "analysis": {}},
+        ) as process_frame:
+            response = self.client_a.post(
+                reverse("dashboard:analyze_frame"),
+                {
+                    "frame": "frame-data",
+                    "exercise": "vertical-jump",
+                    "state": "{}",
+                    "athlete_id": str(self.athlete_a.id),
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        process_frame.assert_called_once_with(
+            "frame-data", "vertical-jump", {}, 170.0)
+
+    def test_analyze_frame_rejects_another_trainers_athlete(self):
+        athlete_b = Athlete.objects.create(
+            trainer=self.trainer_b,
+            name="Live Athlete B",
+            athlete_id="LB001",
+            age=23,
+            gender="Female",
+            sport="Running",
+        )
+        response = self.client_a.post(
+            reverse("dashboard:analyze_frame"),
+            {
+                "frame": "frame-data",
+                "exercise": "vertical-jump",
+                "state": "{}",
+                "athlete_id": str(athlete_b.id),
+            },
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json(), {"error": "Athlete not found"})
 
     def test_save_live_assessment_requires_auth(self):
         anonymous_client = self.client_class()

@@ -6,6 +6,22 @@ app_name = "dashboard"
 urlpatterns = [
     # existing URLs (same rakho)
     path("", views.trainer_dashboard, name="trainer_dashboard"),
+    path("athlete/dashboard/", views.athlete_dashboard, name="athlete_dashboard"),
+    path(
+        "athlete/password/change/",
+        views.AthletePasswordChangeView.as_view(),
+        name="athlete_password_change",
+    ),
+    path(
+        "athlete/password/change/done/",
+        views.AthletePasswordChangeDoneView.as_view(),
+        name="athlete_password_change_done",
+    ),
+    path(
+        "athlete/<int:athlete_id>/pdf/",
+        views.download_athlete_pdf,
+        name="download_athlete_pdf",
+    ),
     path("athlete/add/", views.add_athlete, name="add_athlete"),
     path("athlete/<int:athlete_id>/", views.athlete_detail, name="athlete_detail"),
     path("athlete/<int:athlete_id>/edit/",

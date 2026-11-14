@@ -41,22 +41,31 @@ def test_pixels_per_cm_is_not_inferred_without_physical_calibration():
 
 
 def test_vertical_jump_uses_ankle_height_and_returns_measurement():
-    keypoints = [[320, 120, 0.9]] + [[0, 0, 0.0] for _ in range(16)]
-    keypoints[5] = _kp(300, 190)
-    keypoints[6] = _kp(340, 190)
-    keypoints[11] = _kp(300, 240)
-    keypoints[12] = _kp(340, 240)
-    keypoints[13] = _kp(300, 300)
-    keypoints[14] = _kp(340, 300)
-    keypoints[15] = _kp(305, 420)
-    keypoints[16] = _kp(335, 420)
+    keypoints = [[0, 0, 0.0] for _ in range(17)]
+    keypoints[11] = _kp(100, 100)
+    keypoints[13] = _kp(100, 200)
+    keypoints[15] = _kp(200, 200)
 
     result = analyze_exercise("vertical-jump", keypoints, {})
 
     assert result["valid"] is True
     assert result["unit"] == "px"
     assert result["current_value"] >= 0
+    assert result["tracked_joint_angle"] == 90.0
+    assert result["joint_name"] == "Knee Flexion"
     assert "pixels_per_cm" not in result["state"]
+
+
+def test_jump_knee_angle_is_null_when_keypoint_confidence_is_low():
+    keypoints = [[0, 0, 0.0] for _ in range(17)]
+    keypoints[11] = _kp(100, 100)
+    keypoints[13] = _kp(100, 200, 0.4)
+    keypoints[15] = _kp(200, 200)
+
+    result = analyze_exercise("vertical-jump", keypoints, {})
+
+    assert result["tracked_joint_angle"] is None
+    assert result["joint_name"] == "Knee Flexion"
 
 
 def test_vertical_jump_height_scale_is_estimated_and_saved_as_unvalidated():
@@ -222,6 +231,68 @@ def test_situp_video_end_distinguishes_upper_reps_from_complete_cycles():
         result = analyze_exercise("sit-ups", _situp_keypoints(angle), state)
     assert result["state"]["completed_cycles"] == 1
     assert build_assessment_record("sit-ups", state)["measurement"] == 1
+
+
+def test_situp_form_warning_reports_coaching_and_keypoint_confidence():
+    state = {
+        "situp_phase": "top",
+        "situp_angle_history": [150, 150],
+    }
+
+    result = analyze_exercise("sit-ups", _situp_keypoints(150), state)
+
+    assert result["form_status"] == "WARNING"
+    assert result["coaching_cue"] == "Go deeper"
+    assert "depth" in result["detected_issue"]
+    assert result["confidence"] == 0.9
+
+
+def test_situp_low_keypoint_confidence_reports_insufficient_data():
+    result = analyze_exercise(
+        "sit-ups", _situp_keypoints(150, confidence=0.4), {})
+
+    assert result["form_status"] == "INSUFFICIENT_DATA"
+    assert result["confidence"] == 0.4
+    assert result["coaching_cue"] is None
+    assert result["tracked_joint_angle"] is None
+    assert result["joint_name"] == "Hip Flexion"
+
+
+def test_situp_reports_current_hip_angle():
+    result = analyze_exercise("sit-ups", _situp_keypoints(90), {})
+
+    assert result["tracked_joint_angle"] == 90.0
+    assert result["joint_name"] == "Hip Flexion"
+
+
+def test_vertical_jump_reports_stiff_landing_warning():
+    keypoints = [[0, 0, 0.0] for _ in range(17)]
+    for index, point in {
+        11: _kp(100, 100),
+        12: _kp(300, 100),
+        13: _kp(100, 450),
+        14: _kp(300, 450),
+        15: _kp(100, 400),
+        16: _kp(300, 400),
+    }.items():
+        keypoints[index] = point
+
+    state = {}
+    analyze_exercise("vertical-jump", keypoints, state)
+    keypoints[15] = _kp(100, 350)
+    keypoints[16] = _kp(300, 350)
+    analyze_exercise("vertical-jump", keypoints, state)
+    keypoints[13] = _kp(100, 450)
+    keypoints[14] = _kp(300, 450)
+    keypoints[15] = _kp(200, 400)
+    keypoints[16] = _kp(300, 400)
+
+    result = analyze_exercise("vertical-jump", keypoints, state)
+
+    assert result["form_status"] == "WARNING"
+    assert result["coaching_cue"] == "Land with controlled knee flexion"
+    assert "Stiff landing" in result["detected_issue"]
+    assert result["confidence"] == 0.9
 
 
 def test_vertical_and_broad_jumps_are_distinct_uncalibrated_measurements():

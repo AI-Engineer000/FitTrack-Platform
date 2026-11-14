@@ -263,6 +263,28 @@ h1, h2, h3 {
     position: relative;
 }
 
+.password-field input { padding-right: 3.25rem; }
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transform: translateY(-50%);
+}
+
+.password-toggle:hover { color: var(--green); }
+.password-toggle:focus-visible { outline: 2px solid var(--green); }
+
 .form-group input {
     width: 100%;
     padding: 13px 16px;
@@ -522,7 +544,7 @@ h1, h2, h3 {
 
                 <div class="form-group">
                     <label for="id_password">Password</label>
-                    <div class="form-input-wrap">
+                    <div class="form-input-wrap password-field">
                         <input 
                             type="password" 
                             name="password" 
@@ -531,6 +553,7 @@ h1, h2, h3 {
                             required
                             autocomplete="current-password"
                         >
+                        <button class="password-toggle" type="button" data-password-toggle aria-label="Show password" aria-pressed="false">👁️</button>
                     </div>
                 </div>
 
@@ -557,6 +580,19 @@ h1, h2, h3 {
     </div>
 
 </div>
+
+<script>
+    document.querySelectorAll("[data-password-toggle]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            const input = button.parentElement.querySelector("input");
+            const showPassword = input.type === "password";
+            input.type = showPassword ? "text" : "password";
+            button.textContent = showPassword ? "🙈" : "👁️";
+            button.setAttribute("aria-label", showPassword ? "Hide password" : "Show password");
+            button.setAttribute("aria-pressed", String(showPassword));
+        });
+    });
+</script>
 
 </body>
 </html>

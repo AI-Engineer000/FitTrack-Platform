@@ -7,7 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ exercise_name }} — AI Fitness Assessment</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="{% static 'dashboard.css' %}">
     <script>
         (function () {
@@ -57,14 +59,20 @@
         }
 
         body {
-            font-family: "Inter", sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: var(--bg);
             color: var(--ink);
             min-height: 100vh;
             transition: background 0.3s, color 0.3s;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        h1, h2, h3 { font-family: "Barlow Condensed", sans-serif; font-weight: 700; }
+        h1, h2, h3 { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            font-weight: 700; 
+            letter-spacing: -0.025em; 
+        }
         a { color: inherit; text-decoration: none; }
 
         .live-wrap {
@@ -154,9 +162,9 @@
             gap: 8px;
             padding: 11px 18px;
             border-radius: 10px;
-            font-family: "Inter", sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 0.86rem;
-            font-weight: 700;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.18s;
             border: none;
@@ -285,10 +293,11 @@
         }
 
         .athlete-name {
-            font-family: "Barlow Condensed", sans-serif;
-            font-size: 1.5rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 1.4rem;
             font-weight: 700;
             color: var(--ink);
+            letter-spacing: -0.02em;
         }
 
         .athlete-meta {
@@ -360,7 +369,7 @@
             border: 1px solid var(--border);
             border-radius: 8px;
             color: var(--ink);
-            font-family: "Inter", sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 0.85rem;
             cursor: pointer;
             outline: none;
@@ -475,7 +484,7 @@
 
         #camera-overlay[hidden], #video-empty-overlay[hidden] { display: none; }
         .overlay-icon { font-size: 3rem; }
-        .overlay-heading { color: #f8fafc; font-size: 1.4rem; font-family: "Barlow Condensed", sans-serif; font-weight: 700; }
+        .overlay-heading { color: #f8fafc; font-size: 1.4rem; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-weight: 700; letter-spacing: -0.02em; }
         .overlay-desc { max-width: 400px; color: #cbd5e1; font-size: 0.85rem; line-height: 1.5; }
 
         .metrics-grid {
@@ -503,11 +512,12 @@
         }
 
         .metric-value {
-            font-family: "Barlow Condensed", sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 2.2rem;
             font-weight: 700;
             line-height: 1.1;
             color: var(--green);
+            letter-spacing: -0.03em;
         }
 
         .metric-value.coral { color: var(--coral); }
@@ -538,13 +548,15 @@
         }
 
         .state-banner-val {
-            font-family: "Barlow Condensed", sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 1.3rem;
             font-weight: 700;
             color: var(--green-dark);
+            letter-spacing: -0.02em;
         }
 
         .action-row { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+        .audio-toggle { width: 100%; }
 
         #toast-container {
             position: fixed;
@@ -573,6 +585,124 @@
         @media (max-width: 1050px) {
             .live-grid { grid-template-columns: 1fr; }
         }
+
+        /* Biomechanical Analytics Section (Apple-style dark dashboard) */
+        .analytics-section {
+            margin-top: 24px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        [data-theme="dark"] .analytics-section,
+        [data-theme="light"] .analytics-section {
+            background: #0d120f;
+            border-color: rgba(255, 255, 255, 0.08);
+            color: #f5f7f5;
+        }
+
+        .analytics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 14px;
+        }
+
+        .analytics-header h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.015em;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .analytics-header .analytics-badge {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 12px;
+            background: rgba(52, 211, 153, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(52, 211, 153, 0.25);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .analytics-chart-wrap {
+            position: relative;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .analytics-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        .analytics-summary-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        .analytics-summary-card:hover {
+            border-color: rgba(52, 211, 153, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .analytics-card-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .analytics-card-val {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 1.85rem;
+            font-weight: 700;
+            color: #f8fafc;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+        }
+
+        .analytics-card-val.accent-green {
+            color: #34d399;
+        }
+
+        .analytics-card-val.accent-coral {
+            color: #fb923c;
+        }
+
+        @media (max-width: 900px) {
+            .analytics-summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 520px) {
+            .analytics-summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -595,7 +725,7 @@
             <div class="page-label">AI Computer Vision Assessment</div>
             <h1>
                 {{ exercise_name }}
-                <span style="font-size:0.95rem; font-family:'Inter',sans-serif; font-weight:600; padding:4px 12px; border-radius:20px; background:var(--green-soft); color:var(--green); border:1px solid var(--border);">YOLO26-Pose (17 Keypoints)</span>
+                <span style="font-size:0.95rem; font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight:600; padding:4px 12px; border-radius:20px; background:var(--green-soft); color:var(--green); border:1px solid var(--border);">YOLO26-Pose (17 Keypoints)</span>
             </h1>
         </div>
         <div class="header-actions">
@@ -646,28 +776,6 @@
                 <button type="button" class="mode-btn" id="modeVideoBtn" role="tab" aria-selected="false">
                     📁 Upload Video
                 </button>
-            </div>
-
-            <div class="source-card">
-                <label for="athleteHeightInput" class="source-card-label">
-                    Athlete height for scale estimate (cm)
-                </label>
-                <input
-                    type="number"
-                    id="athleteHeightInput"
-                    min="100"
-                    max="250"
-                    step="0.1"
-                    inputmode="decimal"
-                    placeholder="Enter measured height"
-                    style="width:100%;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--ink);"
-                >
-                <div class="upload-subtitle">
-                    Estimate only: stand fully upright, side-on, with head and both ankles visible. Nose-to-ankle span and camera perspective limit accuracy.
-                </div>
-                <div class="upload-subtitle" id="calibrationStatus">
-                    No scale estimate yet.
-                </div>
             </div>
 
             <!-- Mode A: Camera Selector Card -->
@@ -734,6 +842,15 @@
 
             <!-- Action Buttons -->
             <div class="action-row">
+                <button
+                    class="btn btn-secondary audio-toggle"
+                    id="audioCoachingToggle"
+                    type="button"
+                    aria-pressed="true"
+                >
+                    <span id="audioCoachingIcon" aria-hidden="true">🔊</span>
+                    <span id="audioCoachingLabel">Audio coaching on</span>
+                </button>
                 <button class="btn btn-primary" id="saveBtn" type="button">
                     Save Assessment
                 </button>
@@ -745,6 +862,37 @@
         </div>
 
     </div>
+
+    <!-- Biomechanical Analytics Section -->
+    <section class="analytics-section" aria-labelledby="analyticsTitle">
+        <div class="analytics-header">
+            <h2 id="analyticsTitle">Biomechanical Analytics</h2>
+            <span class="analytics-badge">Real-time Telemetry</span>
+        </div>
+
+        <div class="analytics-chart-wrap">
+            <canvas id="jointAngleChart" height="80"></canvas>
+        </div>
+
+        <div class="analytics-summary-grid">
+            <div class="analytics-summary-card">
+                <div class="analytics-card-label">Min Angle</div>
+                <div class="analytics-card-val" id="minAngleVal">0°</div>
+            </div>
+            <div class="analytics-summary-card">
+                <div class="analytics-card-label">Max Angle</div>
+                <div class="analytics-card-val accent-coral" id="maxAngleVal">0°</div>
+            </div>
+            <div class="analytics-summary-card">
+                <div class="analytics-card-label">Avg Angle</div>
+                <div class="analytics-card-val" id="avgAngleVal">0°</div>
+            </div>
+            <div class="analytics-summary-card">
+                <div class="analytics-card-label">Range of Motion (ROM)</div>
+                <div class="analytics-card-val accent-green" id="romAngleVal">0°</div>
+            </div>
+        </div>
+    </section>
 
 </div>
 
@@ -768,8 +916,6 @@
     const videoPlayerBar = document.getElementById("videoPlayerBar");
     const videoScrubber = document.getElementById("videoScrubber");
     const videoTimeText = document.getElementById("videoTimeText");
-    const athleteHeightInput = document.getElementById("athleteHeightInput");
-    const calibrationStatus = document.getElementById("calibrationStatus");
     const videoPlayPauseBtn = document.getElementById("videoPlayPauseBtn");
     const videoRestartBtn = document.getElementById("videoRestartBtn");
     const videoChangeBtn = document.getElementById("videoChangeBtn");
@@ -781,12 +927,20 @@
     const stateLabel = document.getElementById("stateLabel");
     const saveBtn = document.getElementById("saveBtn");
     const resetBtn = document.getElementById("resetBtn");
+    const audioCoachingToggle = document.getElementById("audioCoachingToggle");
+    const audioCoachingIcon = document.getElementById("audioCoachingIcon");
+    const audioCoachingLabel = document.getElementById("audioCoachingLabel");
     const statusText = document.getElementById("statusText");
     const statusPulse = document.getElementById("statusPulse");
     const hudTag = document.getElementById("hudTag");
+    const minAngleVal = document.getElementById("minAngleVal");
+    const maxAngleVal = document.getElementById("maxAngleVal");
+    const avgAngleVal = document.getElementById("avgAngleVal");
+    const romAngleVal = document.getElementById("romAngleVal");
 
     // Constants & Endpoints
     const ATHLETE_ID = "{{ athlete.athlete_id }}";
+    const ANALYSIS_ATHLETE_ID = "{{ athlete.id }}";
     const EXERCISE_SLUG = "{{ exercise_slug }}";
     const EXERCISE_NAME = "{{ exercise_name }}";
     const CSRF_TOKEN = "{{ csrf_token }}";
@@ -820,7 +974,12 @@
     let videoObjectUrl = null;
     let inferenceTimer = null;
     let isProcessing = false;
+    let consecutiveInferenceFailures = 0;
+    let inferenceFailureHalted = false;
     let analysisState = {};
+    let angleHistory = [];
+    let timeHistory = [];
+    let chartInstance = null;
     let analysisGeneration = 0;
     let videoSourceGeneration = 0;
     let videoSeekGeneration = 0;
@@ -832,6 +991,26 @@
     let lastSentW = 640;
     let lastSentH = 480;
     let previousSkeleton = [];
+    let audioCoachingEnabled = true;
+    const spokenCueTimes = new Map();
+    const FORM_STATUS_COLORS = {
+        GOOD: "#10b981",
+        WARNING: "#f59e0b",
+        BAD: "#ef4444",
+        INSUFFICIENT_DATA: "#94a3b8",
+    };
+    let skeletonColor = [16, 185, 129];
+    const speechCoachingAvailable = (
+        "speechSynthesis" in window
+        && "SpeechSynthesisUtterance" in window
+    );
+    if (!speechCoachingAvailable) {
+        audioCoachingEnabled = false;
+        audioCoachingToggle.disabled = true;
+        audioCoachingToggle.setAttribute("aria-pressed", "false");
+        audioCoachingIcon.textContent = "🔇";
+        audioCoachingLabel.textContent = "Audio unavailable";
+    }
 
     if (EXERCISE_SLUG === "sit-ups") {
         maxMetricLabel.textContent = "Upper-position reps";
@@ -879,6 +1058,44 @@
 
     window.addEventListener("resize", resizeOverlay);
 
+    function speakCoachingCue(cue) {
+        if (
+            !audioCoachingEnabled
+            || !cue
+            || !window.speechSynthesis
+            || !window.SpeechSynthesisUtterance
+        ) {
+            return;
+        }
+
+        const now = Date.now();
+        const lastSpokenAt = spokenCueTimes.get(cue);
+        if (lastSpokenAt !== undefined && now - lastSpokenAt < 3000) {
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+        spokenCueTimes.set(cue, now);
+        window.speechSynthesis.speak(
+            new window.SpeechSynthesisUtterance(cue),
+        );
+    }
+
+    audioCoachingToggle.addEventListener("click", () => {
+        audioCoachingEnabled = !audioCoachingEnabled;
+        if (!audioCoachingEnabled && window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+        audioCoachingToggle.setAttribute(
+            "aria-pressed",
+            String(audioCoachingEnabled),
+        );
+        audioCoachingIcon.textContent = audioCoachingEnabled ? "🔊" : "🔇";
+        audioCoachingLabel.textContent = audioCoachingEnabled
+            ? "Audio coaching on"
+            : "Audio coaching muted";
+    });
+
     function getVideoRenderInfo() {
         const vw = video.videoWidth;
         const vh = video.videoHeight;
@@ -914,7 +1131,7 @@
         ctx.clearRect(0, 0, overlay.width, overlay.height);
     }
 
-    function drawKeypoints(keypoints, frameW, frameH) {
+    function drawKeypoints(keypoints, frameW, frameH, formStatus = "GOOD") {
         resizeOverlay();
         const ctx = overlay.getContext("2d");
         ctx.clearRect(0, 0, overlay.width, overlay.height);
@@ -929,6 +1146,16 @@
 
         const srcW = frameW || lastSentW || 640;
         const srcH = frameH || lastSentH || 480;
+        const targetHex = FORM_STATUS_COLORS[formStatus]
+            || FORM_STATUS_COLORS.INSUFFICIENT_DATA;
+        const targetColor = [1, 3, 5].map(
+            offset => Number.parseInt(targetHex.slice(offset, offset + 2), 16),
+        );
+        skeletonColor = skeletonColor.map(
+            (channel, index) => channel + (targetColor[index] - channel) * 0.45,
+        );
+        const drawColor = `rgb(${skeletonColor.map(Math.round).join(", ")})`;
+        const glowColor = `rgba(${skeletonColor.map(Math.round).join(", ")}, 0.45)`;
 
         // Map keypoints from inference frame coordinate space to displayed screen video bounds
         const mapped = keypoints.map((kp, idx) => {
@@ -956,9 +1183,9 @@
         ctx.lineWidth = 3.5;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
-        ctx.strokeStyle = "#10b981";
-        ctx.shadowColor = "rgba(16, 185, 129, 0.45)";
-        ctx.shadowBlur = 6;
+        ctx.strokeStyle = drawColor;
+        ctx.shadowColor = glowColor;
+        ctx.shadowBlur = 8;
 
         CONNECTIONS.forEach(([a, b]) => {
             const pA = mapped[a];
@@ -978,7 +1205,7 @@
             ctx.beginPath();
             const radius = pt.idx >= 11 ? 5.5 : 4.5;
             ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
-            ctx.fillStyle = pt.idx >= 11 ? "#fb923c" : "#34d399";
+            ctx.fillStyle = drawColor;
             ctx.fill();
             ctx.strokeStyle = "#ffffff";
             ctx.lineWidth = 1.5;
@@ -991,6 +1218,7 @@
     // ==========================================
 
     async function sendFrame(isFinalVideoFrame = false) {
+        if (inferenceFailureHalted) return false;
         if (isProcessing) {
             if (currentMode === "video" && videoAnalysisPlaying && !video.paused) {
                 video.pause();
@@ -1013,22 +1241,6 @@
         ) {
             return false;
         }
-
-        const athleteHeightCm = athleteHeightInput.value.trim();
-        if (athleteHeightCm) {
-            const height = Number(athleteHeightCm);
-            if (!Number.isFinite(height) || height < 100 || height > 250) {
-                if (!invalidHeightNotified) {
-                    showToast(
-                        "Enter an athlete height between 100 and 250 cm.",
-                        "error",
-                    );
-                    invalidHeightNotified = true;
-                }
-                return false;
-            }
-        }
-        invalidHeightNotified = false;
 
         isProcessing = true;
         const requestGeneration = analysisGeneration;
@@ -1064,10 +1276,7 @@
                 ? frameTime
                 : performance.now() / 1000;
             form.append("state", JSON.stringify(analysisState));
-            form.append("athlete_id", ATHLETE_ID);
-            if (athleteHeightCm) {
-                form.append("athlete_height_cm", athleteHeightCm);
-            }
+            form.append("athlete_id", ANALYSIS_ATHLETE_ID);
 
             const res = await fetch(ANALYZE_FRAME_URL, {
                 method: "POST",
@@ -1082,6 +1291,7 @@
             if (!result || result.error) {
                 throw new Error(result?.error || "Frame analysis failed");
             }
+            consecutiveInferenceFailures = 0;
             if (
                 requestGeneration === analysisGeneration
                 && requestVideoGeneration === videoSourceGeneration
@@ -1095,6 +1305,20 @@
             return true;
         } catch (err) {
             console.warn("Inference frame error:", err);
+            consecutiveInferenceFailures += 1;
+            if (consecutiveInferenceFailures >= 3 && !inferenceFailureHalted) {
+                inferenceFailureHalted = true;
+                stopInferenceLoop();
+                if (currentMode === "video") {
+                    videoAnalysisPlaying = false;
+                    video.pause();
+                }
+                statusText.textContent = "AI processing failed — reset analysis to retry";
+                showToast(
+                    "AI processing failed. Please check video format or connection. Reset analysis to try again.",
+                    "error",
+                );
+            }
             return false;
         } finally {
             isProcessing = false;
@@ -1125,16 +1349,17 @@
 
     function applyAnalysisResult(data) {
         if (!data || data.error) return;
+        const analysis = data.analysis || {};
+        const formStatus = analysis.form_status || "INSUFFICIENT_DATA";
+        if (
+            analysis.coaching_cue
+            && (formStatus === "WARNING" || formStatus === "BAD")
+        ) {
+            speakCoachingCue(analysis.coaching_cue);
+        }
 
         if (data.analysis && data.analysis.state) {
             analysisState = data.analysis.state;
-            if (analysisState.calibration_method === "nose_to_ankle_height") {
-                calibrationStatus.textContent =
-                    `Estimated scale: ${analysisState.pixels_per_cm.toFixed(2)} px/cm. Approximate only; not physical calibration.`;
-            } else if (athleteHeightInput.value.trim()) {
-                calibrationStatus.textContent =
-                    "Waiting for a confident, fully upright pose with head and both ankles visible.";
-            }
         }
 
         if (data.analysis && data.analysis.valid) {
@@ -1154,16 +1379,173 @@
                 data.analysis.state.completed_cycles ?? 0;
         }
 
+        // Track joint angle telemetry for Analytics Section
+        if (data.analysis && data.analysis.tracked_joint_angle !== null && data.analysis.tracked_joint_angle !== undefined) {
+            const rawAngle = Number(data.analysis.tracked_joint_angle);
+            if (!isNaN(rawAngle)) {
+                const angle = Math.round(rawAngle * 10) / 10;
+                angleHistory.push(angle);
+                timeHistory.push(Date.now());
+                updateBiomechanicalAnalytics(angle);
+            }
+        }
+
         if (data.keypoints && data.keypoints.length > 0) {
-            drawKeypoints(data.keypoints, data.frame_width, data.frame_height);
+            drawKeypoints(
+                data.keypoints,
+                data.frame_width,
+                data.frame_height,
+                formStatus,
+            );
         } else {
             previousSkeleton = [];
             clearOverlay();
         }
     }
 
+    // ==========================================
+    // BIOMECHANICAL ANALYTICS CHART & METRICS
+    // ==========================================
+
+    function initJointAngleChart() {
+        const ctx = document.getElementById("jointAngleChart");
+        if (!ctx) return;
+
+        if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+        }
+
+        const labels = angleHistory.map((_, i) => `${i + 1}`);
+
+        chartInstance = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Joint Angle (°)",
+                    data: [...angleHistory],
+                    borderColor: "#10b981",
+                    backgroundColor: "rgba(16, 185, 129, 0.08)",
+                    borderWidth: 2.5,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0,
+                    pointHitRadius: 10,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: "index",
+                        intersect: false,
+                        backgroundColor: "rgba(15, 23, 42, 0.9)",
+                        titleColor: "#94a3b8",
+                        bodyColor: "#f8fafc",
+                        borderColor: "rgba(255, 255, 255, 0.1)",
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function (context) {
+                                return ` Angle: ${context.parsed.y}°`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: "#94a3b8",
+                            font: {
+                                family: "'Inter', sans-serif",
+                                size: 10
+                            },
+                            maxTicksLimit: 10
+                        }
+                    },
+                    y: {
+                        display: true,
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: "#94a3b8",
+                            font: {
+                                family: "'Inter', sans-serif",
+                                size: 10
+                            },
+                            callback: function (val) {
+                                return val + "°";
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateBiomechanicalAnalytics() {
+        if (!angleHistory.length) return;
+
+        // Calculate summary metrics
+        let min = Infinity;
+        let max = -Infinity;
+        let sum = 0;
+
+        for (let i = 0; i < angleHistory.length; i++) {
+            const v = angleHistory[i];
+            if (v < min) min = v;
+            if (v > max) max = v;
+            sum += v;
+        }
+
+        const avg = Math.round((sum / angleHistory.length) * 10) / 10;
+        const rom = Math.round((max - min) * 10) / 10;
+
+        if (minAngleVal) minAngleVal.textContent = `${min}°`;
+        if (maxAngleVal) maxAngleVal.textContent = `${max}°`;
+        if (avgAngleVal) avgAngleVal.textContent = `${avg}°`;
+        if (romAngleVal) romAngleVal.textContent = `${rom}°`;
+
+        // Update or initialize Chart.js
+        if (!chartInstance) {
+            initJointAngleChart();
+        } else {
+            chartInstance.data.labels.push(`${angleHistory.length}`);
+            chartInstance.data.datasets[0].data.push(angleHistory[angleHistory.length - 1]);
+            chartInstance.update("none");
+        }
+    }
+
+    function resetBiomechanicalAnalytics() {
+        angleHistory = [];
+        timeHistory = [];
+
+        if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+        }
+
+        if (minAngleVal) minAngleVal.textContent = "0°";
+        if (maxAngleVal) maxAngleVal.textContent = "0°";
+        if (avgAngleVal) avgAngleVal.textContent = "0°";
+        if (romAngleVal) romAngleVal.textContent = "0°";
+    }
+
     function startInferenceLoop() {
         stopInferenceLoop();
+        if (inferenceFailureHalted) return;
         inferenceTimer = setInterval(sendFrame, 250);
     }
 
@@ -1546,25 +1928,25 @@
     function resetAnalysisState() {
         analysisGeneration += 1;
         videoFinalizationPending = false;
+        consecutiveInferenceFailures = 0;
+        inferenceFailureHalted = false;
         analysisState = {};
         previousSkeleton = [];
-        calibrationStatus.textContent = athleteHeightInput.value.trim()
-            ? "Scale estimate will be recalculated from an upright pose."
-            : "No scale estimate yet.";
         if (currentMode === "video") {
             videoAnalysisComplete = false;
             saveBtn.disabled = true;
         }
 
-        athleteHeightInput.addEventListener("change", () => {
-            resetAnalysisState();
-        });
         lastAnalyzedVideoTime = currentMode === "video" ? video.currentTime : null;
         currentValue.innerHTML = "—";
         maxValue.innerHTML = "—";
         completedCyclesValue.textContent = "0";
         stateLabel.textContent = "READY";
         clearOverlay();
+        resetBiomechanicalAnalytics();
+        if (currentMode === "camera" && stream) {
+            startInferenceLoop();
+        }
     }
 
     resetBtn.addEventListener("click", () => {

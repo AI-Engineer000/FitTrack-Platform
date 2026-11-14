@@ -162,6 +162,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Static files folder — backend/static/ ke andar
 STATICFILES_DIRS = [
@@ -180,7 +182,7 @@ MAILERS = {
 }
 
 LOGIN_URL = "/accounts/login/"
-LOGIN_REDIRECT_URL = "/trainer/"
+LOGIN_REDIRECT_URL = "/accounts/post-login/"
 LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 # ALLAUTH SETTINGS (Google OAuth)
@@ -193,7 +195,7 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
-ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_LOGIN_METHODS = {'username', 'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 
@@ -222,7 +224,7 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-LOGIN_REDIRECT_URL = '/trainer/'
+LOGIN_REDIRECT_URL = '/accounts/post-login/'
 ACCOUNT_LOGOUT_ON_GET = True
 ACCOUNT_LOGOUT_REDIRECT_URL = "/accounts/login/"
 

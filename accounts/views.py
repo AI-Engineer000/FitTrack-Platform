@@ -1,17 +1,32 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout as auth_logout
+from django.contrib import messages
+
+from accounts.forms import ProfileEditForm
+from athletes.models import Athlete
+from trainers.models import Trainer
 
 
 @login_required
 def post_login_redirect(request):
-    """Login ke baad — naya user hai toh profile setup pe bhejo"""
-    profile = request.user.profile
+    try:
+        request.user.athlete
+    except Athlete.DoesNotExist:
+        pass
+    else:
+        return redirect("dashboard:athlete_dashboard")
 
-    if not profile.profile_completed:
-        return redirect("accounts:profile_setup")
+    try:
+        request.user.trainer
+    except Trainer.DoesNotExist:
+        profile = request.user.profile
+        if not profile.profile_completed:
+            return redirect("accounts:profile_setup")
+    else:
+        return redirect("dashboard:trainer_dashboard")
 
-    return redirect("/trainer/")
+    return redirect("dashboard:trainer_dashboard")
 
 
 @login_required
@@ -41,28 +56,24 @@ def profile_edit(request):
     profile = request.user.profile
 
     if request.method == "POST":
-        # Update user fields
-        request.user.first_name = request.POST.get("first_name", "")
-        request.user.last_name = request.POST.get("last_name", "")
-        request.user.email = request.POST.get("email", "")
-        request.user.save()
+        form = ProfileEditForm(
+            request.POST,
+            request.FILES,
+            instance=profile,
+            user=request.user,
+        )
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your profile has been updated.")
+            return redirect("accounts:profile_edit")
+    else:
+        form = ProfileEditForm(instance=profile, user=request.user)
 
-        # Update profile fields
-        profile.phone = request.POST.get("phone", "")
-        profile.organization = request.POST.get("organization", "")
-        profile.save()
-
-        # Password change
-        new_password = request.POST.get("new_password")
-        if new_password:
-            request.user.set_password(new_password)
-            request.user.save()
-            from django.contrib.auth import update_session_auth_hash
-            update_session_auth_hash(request, request.user)
-
-        return redirect("dashboard:profile")
-
-    return render(request, "accounts/profile_edit.html")
+    return render(
+        request,
+        "accounts/profile_edit.html",
+        {"form": form},
+    )
 
 
 def custom_logout_confirm(request):

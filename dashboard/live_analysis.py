@@ -13,7 +13,20 @@ BROAD_JUMP_LANDING_TOLERANCE_PX = 24.0
 CROSSING_HYSTERESIS_PX = 25.0
 
 
-def _result(valid, current_value, max_value, unit, state_label, state, current_unit=None, max_unit=None):
+def _result(
+    valid,
+    current_value,
+    max_value,
+    unit,
+    state_label,
+    state,
+    current_unit=None,
+    max_unit=None,
+    form_status=None,
+    coaching_cue=None,
+    detected_issue=None,
+    confidence=None,
+):
     return {
         "valid": valid,
         "current_value": current_value,
@@ -23,11 +36,28 @@ def _result(valid, current_value, max_value, unit, state_label, state, current_u
         "max_unit": max_unit or unit,
         "state_label": state_label,
         "state": state,
+        "form_status": form_status or (
+            "GOOD" if valid else "INSUFFICIENT_DATA"
+        ),
+        "coaching_cue": coaching_cue,
+        "detected_issue": detected_issue,
+        "confidence": confidence,
+        "tracked_joint_angle": None,
+        "joint_name": None,
     }
 
 
-def _invalid(state):
-    return _result(False, None, None, None, "NO DATA", state)
+def _invalid(state, confidence=None):
+    return _result(
+        False,
+        None,
+        None,
+        None,
+        "NO DATA",
+        state,
+        form_status="INSUFFICIENT_DATA",
+        confidence=confidence,
+    )
 
 
 def estimate_pixels_per_cm(keypoints):
@@ -42,6 +72,48 @@ def _keypoint_valid(kp):
         and np.isfinite(kp[:3]).all()
         and kp[2] >= CONFIDENCE_THRESHOLD
     )
+
+
+def _confidence_average(points):
+    confidences = []
+    for point in points:
+        if point and len(point) >= 3:
+            try:
+                confidence = float(point[2])
+            except (TypeError, ValueError):
+                continue
+            if np.isfinite(confidence):
+                confidences.append(confidence)
+    if not confidences:
+        return None
+    return round(float(np.mean(confidences)), 3)
+
+
+def _current_knee_angle(keypoints):
+    if not keypoints or len(keypoints) < 17:
+        return None
+
+    valid_sides = []
+    for hip_index, knee_index, ankle_index in (
+        (11, 13, 15),
+        (12, 14, 16),
+    ):
+        side = (
+            keypoints[hip_index],
+            keypoints[knee_index],
+            keypoints[ankle_index],
+        )
+        if all(_keypoint_valid(point) for point in side):
+            valid_sides.append(side)
+    if not valid_sides:
+        return None
+
+    hip, knee, ankle = max(
+        valid_sides,
+        key=lambda side: sum(float(point[2]) for point in side),
+    )
+    angle = _calculate_angle(hip, knee, ankle)
+    return round(angle, 1) if angle is not None else None
 
 
 def _pick_keypoint(*candidates):
@@ -83,7 +155,7 @@ def _analyze_vertical_jump(keypoints, state):
 
     ankle = _pick_keypoint(keypoints[15], keypoints[16])
     if ankle is None:
-        return _invalid(state)
+        return _invalid(state, _confidence_average(keypoints[15:17]))
 
     ankle_y = float(ankle[1])
     if state["standing_y"] is None:
@@ -92,6 +164,48 @@ def _analyze_vertical_jump(keypoints, state):
     state["max_jump_px"] = max(state["max_jump_px"], current_px)
 
     label = "JUMPING" if current_px >= JUMP_START_THRESHOLD_PX else "READY"
+    was_airborne = state.get("vertical_jump_airborne", False)
+    landing = bool(was_airborne and current_px < JUMP_START_THRESHOLD_PX)
+    state["vertical_jump_airborne"] = (
+        current_px >= JUMP_START_THRESHOLD_PX
+    )
+
+    confidence = round(float(ankle[2]), 3)
+    form_status = "GOOD"
+    coaching_cue = None
+    detected_issue = None
+    if landing:
+        valid_knees = []
+        for hip_index, knee_index, ankle_index in (
+            (11, 13, 15),
+            (12, 14, 16),
+        ):
+            side = (
+                keypoints[hip_index],
+                keypoints[knee_index],
+                keypoints[ankle_index],
+            )
+            if all(_keypoint_valid(point) for point in side):
+                valid_knees.append(side)
+        if not valid_knees:
+            form_status = "INSUFFICIENT_DATA"
+            confidence = _confidence_average(
+                keypoints[index] for index in (11, 12, 13, 14, 15, 16)
+            )
+        else:
+            hip, knee, landing_ankle = max(
+                valid_knees,
+                key=lambda side: sum(float(point[2]) for point in side),
+            )
+            landing_knee_angle = _calculate_angle(hip, knee, landing_ankle)
+            confidence = _confidence_average((hip, knee, landing_ankle))
+            if landing_knee_angle is None:
+                form_status = "INSUFFICIENT_DATA"
+            elif landing_knee_angle < 90:
+                form_status = "WARNING"
+                coaching_cue = "Land with controlled knee flexion"
+                detected_issue = "Stiff landing (knee angle below 90 degrees)"
+
     pixels_per_cm = state.get("pixels_per_cm")
     if pixels_per_cm and state.get("calibration_status") == "estimated":
         current_cm = round(current_px / pixels_per_cm, 1)
@@ -104,6 +218,10 @@ def _analyze_vertical_jump(keypoints, state):
             "cm",
             label,
             state,
+            form_status=form_status,
+            coaching_cue=coaching_cue,
+            detected_issue=detected_issue,
+            confidence=confidence,
         )
     return _result(
         True,
@@ -112,6 +230,10 @@ def _analyze_vertical_jump(keypoints, state):
         "px",
         label,
         state,
+        form_status=form_status,
+        coaching_cue=coaching_cue,
+        detected_issue=detected_issue,
+        confidence=confidence,
     )
 
 
@@ -227,6 +349,7 @@ def _analyze_situps(keypoints, state):
         state["situp_phase"] = "seeking_bottom"
 
     valid_sides = []
+    sides = []
     for shoulder_index, hip_index, knee_index in (
         (5, 11, 13),
         (6, 12, 14),
@@ -236,18 +359,27 @@ def _analyze_situps(keypoints, state):
             keypoints[hip_index],
             keypoints[knee_index],
         )
+        sides.append(side)
         if all(_keypoint_valid(point) for point in side):
             valid_sides.append(side)
     if not valid_sides:
-        return _invalid(state)
+        best_side = max(
+            sides,
+            key=lambda side: sum(
+                float(point[2]) for point in side
+                if point and len(point) >= 3 and np.isfinite(point[2])
+            ),
+        )
+        return _invalid(state, _confidence_average(best_side))
 
     shoulder, hip, knee = max(
         valid_sides,
         key=lambda side: sum(float(point[2]) for point in side),
     )
+    confidence = _confidence_average((shoulder, hip, knee))
     angle = _calculate_angle(shoulder, hip, knee)
     if angle is None:
-        return _invalid(state)
+        return _invalid(state, confidence)
 
     raw_history = state.get("situp_angle_history", [])
     history = []
@@ -263,6 +395,10 @@ def _analyze_situps(keypoints, state):
     state["situp_angle_history"] = history
     angle = round(float(np.median(history)), 1)
     phase = state["situp_phase"]
+    is_up_phase = phase == "top"
+    form_status = "GOOD"
+    coaching_cue = None
+    detected_issue = None
 
     if phase == "seeking_bottom" and angle >= SITUP_DOWN_ANGLE:
         phase = "bottom"
@@ -272,6 +408,11 @@ def _analyze_situps(keypoints, state):
     elif phase == "top" and angle >= SITUP_DOWN_ANGLE:
         phase = "bottom"
         state["completed_cycles"] = state.get("completed_cycles", 0) + 1
+
+    if is_up_phase and 140 <= angle <= 160:
+        form_status = "WARNING"
+        coaching_cue = "Go deeper"
+        detected_issue = "Incomplete sit-up depth (hip angle 140-160 degrees)"
 
     state["situp_phase"] = phase
     label = {
@@ -288,6 +429,10 @@ def _analyze_situps(keypoints, state):
         state,
         current_unit="°",
         max_unit="reps",
+        form_status=form_status,
+        coaching_cue=coaching_cue,
+        detected_issue=detected_issue,
+        confidence=confidence,
     )
 
 
@@ -494,11 +639,52 @@ ANALYZERS = {
 }
 
 
+def _exercise_confidence(exercise, keypoints):
+    if not keypoints or len(keypoints) < 17:
+        return None
+
+    if exercise == "broad-jump":
+        return _confidence_average((keypoints[15], keypoints[16]))
+
+    point_indices = {
+        "sit-reach": (9, 10),
+        "sprint": (15, 16),
+        "medicine-ball": (9, 10),
+        "shuttle-run": (11, 12),
+        "endurance-run": (11, 12),
+    }.get(exercise)
+    if point_indices is None:
+        return None
+    selected = _pick_keypoint(*(keypoints[index] for index in point_indices))
+    return _confidence_average((selected,)) if selected is not None else None
+
+
 def analyze_exercise(exercise, keypoints, state):
     analyzer = ANALYZERS.get(exercise)
     if analyzer is None:
         return _invalid(state)
-    return analyzer(keypoints, state)
+    result = analyzer(keypoints, state)
+    result.setdefault(
+        "form_status",
+        "GOOD" if result.get("valid") else "INSUFFICIENT_DATA",
+    )
+    result.setdefault("coaching_cue", None)
+    result.setdefault("detected_issue", None)
+    if result.get("confidence") is None:
+        result["confidence"] = _exercise_confidence(exercise, keypoints)
+
+    joint_names = {
+        "sit-ups": "Hip Flexion",
+        "vertical-jump": "Knee Flexion",
+        "broad-jump": "Knee Flexion",
+    }
+    result["joint_name"] = joint_names.get(exercise)
+    if exercise == "sit-ups":
+        if result.get("valid"):
+            result["tracked_joint_angle"] = result.get("current_value")
+    elif exercise in {"vertical-jump", "broad-jump"}:
+        result["tracked_joint_angle"] = _current_knee_angle(keypoints)
+    return result
 
 
 def build_assessment_record(exercise, state):

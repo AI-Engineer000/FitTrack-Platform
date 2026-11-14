@@ -1,0 +1,378 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101820">
+    <title>Athlete Dashboard — FitTrack</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            color: #eef4f3;
+            background: #101820;
+            font-synthesis: none;
+        }
+        * { box-sizing: border-box; }
+        .app { min-height: 100vh; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(ellipse at 85% 0%, rgba(16, 185, 129, .12), transparent 34rem),
+                #101820;
+        }
+        .sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            width: 252px;
+            padding: 28px 18px 20px;
+            border-right: 1px solid #2b3a43;
+            background: #141e26;
+        }
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 38px;
+            padding: 0 10px;
+            color: #eef4f3;
+            font-size: 1.15rem;
+            font-weight: 750;
+            letter-spacing: -.03em;
+        }
+        .sidebar-brand img { width: 38px; height: 38px; object-fit: contain; }
+        .sidebar-brand em { color: #6ee7b7; font-style: normal; }
+        .nav-label {
+            margin: 0 10px 10px;
+            color: #849397;
+            font-size: .68rem;
+            font-weight: 750;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+        }
+        .nav-list { display: flex; flex-direction: column; gap: 6px; }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 11px 12px;
+            border: 0;
+            border-radius: 9px;
+            background: transparent;
+            color: #aab8b8;
+            font: inherit;
+            font-size: .88rem;
+            text-align: left;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background .15s ease, color .15s ease;
+        }
+        .nav-item:hover { background: #202e36; color: #f5faf9; }
+        .nav-item.active { background: #20342f; color: #6ee7b7; font-weight: 700; }
+        .toast {
+            margin: 0 0 20px;
+            padding: 13px 16px;
+            border: 1px solid rgba(52, 211, 153, .35);
+            border-left: 3px solid #34d399;
+            border-radius: 9px;
+            background: rgba(16, 185, 129, .1);
+            color: #a7f3d0;
+        }
+        .nav-icon { display: inline-flex; width: 18px; height: 18px; flex: 0 0 18px; }
+        .nav-icon svg {
+            width: 18px; height: 18px; fill: none; stroke: currentColor;
+            stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+        }
+        .sidebar-bottom { margin-top: auto; padding-top: 16px; border-top: 1px solid #2b3a43; }
+        .logout-button {
+            background: rgba(239, 68, 68, .1);
+            color: #f87171;
+        }
+        .logout-button:hover { background: #b91c1c; color: #fff; }
+        .main { width: min(1120px, calc(100% - 252px)); margin: 0 auto 0 252px; padding: 38px 30px 56px; }
+        .eyebrow {
+            margin: 0 0 9px;
+            color: #6ee7b7;
+            font-size: .73rem;
+            font-weight: 750;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+        h1, h2, p { margin-top: 0; }
+        h1 { margin-bottom: 7px; font-size: clamp(1.9rem, 5vw, 2.8rem); letter-spacing: -.04em; }
+        .subtitle { margin: 0; color: #9eadae; }
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            flex: 0 0 auto;
+            padding: 12px 17px;
+            border: 1px solid #34d399;
+            border-radius: 9px;
+            background: #10b981;
+            color: #06251d;
+            font-size: .9rem;
+            font-weight: 750;
+            text-decoration: none;
+            transition: background .15s ease, transform .15s ease;
+        }
+        .button:hover { background: #34d399; transform: translateY(-1px); }
+        .button:focus-visible { outline: 3px solid #a7f3d0; outline-offset: 3px; }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+        .card, .panel {
+            border: 1px solid #2b3a43;
+            border-radius: 14px;
+            background: #19242d;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, .13);
+        }
+        .card { min-height: 132px; padding: 20px; }
+        .card-label { color: #9eadae; font-size: .83rem; }
+        .card-value {
+            display: block;
+            margin-top: 14px;
+            color: #f5faf9;
+            font-size: clamp(1.45rem, 3vw, 2rem);
+            font-weight: 750;
+            letter-spacing: -.035em;
+        }
+        .card-value.accent { color: #6ee7b7; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .panel { padding: 23px; margin-bottom: 18px; }
+        .panel h2 { margin-bottom: 17px; font-size: 1.08rem; letter-spacing: -.01em; }
+        .insight {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin: 0;
+            padding: 15px 16px;
+            border: 1px solid rgba(16, 185, 129, .16);
+            border-left: 3px solid #10b981;
+            border-radius: 9px;
+            background: linear-gradient(110deg, rgba(16, 185, 129, .09), rgba(25, 36, 45, .35));
+            color: #d3eee4;
+            line-height: 1.6;
+        }
+        .insight-icon { flex: 0 0 auto; font-size: 1.25rem; line-height: 1.35; }
+        .insight-text { margin: 0; }
+        .exercise-result { display: flex; justify-content: space-between; gap: 16px; padding: 13px 0; border-top: 1px solid #2b3a43; }
+        .exercise-result:first-of-type { border-top: 0; }
+        .exercise-label { color: #9eadae; font-size: .8rem; }
+        .exercise-name { margin: 4px 0 0; font-weight: 650; }
+        .exercise-score { color: #6ee7b7; font-weight: 750; white-space: nowrap; }
+        .muted, .empty { color: #9eadae; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 12px 10px; border-bottom: 1px solid #2b3a43; white-space: nowrap; }
+        th { color: #9eadae; font-size: .73rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+        td { color: #e4ecea; font-size: .88rem; }
+        tbody tr:last-child td { border-bottom: 0; }
+        .score { color: #6ee7b7; font-weight: 700; }
+        @media (max-width: 900px) {
+            .sidebar { width: 220px; }
+            .main { width: min(1120px, calc(100% - 220px)); margin-left: 220px; padding: 30px 22px 42px; }
+        }
+        @media (max-width: 680px) {
+            .sidebar {
+                position: relative;
+                inset: auto;
+                width: 100%;
+                padding: 16px;
+                border-right: 0;
+                border-bottom: 1px solid #2b3a43;
+            }
+            .sidebar-brand { margin: 0 0 14px; }
+            .nav-list { flex-direction: row; flex-wrap: wrap; }
+            .nav-item { width: auto; padding: 9px 10px; }
+            .sidebar-bottom { margin-top: 12px; padding-top: 12px; }
+            .sidebar-bottom .nav-item { width: 100%; }
+            .main { width: 100%; margin: 0; padding: 27px 16px 42px; }
+            header { align-items: flex-start; }
+            .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .grid { grid-template-columns: 1fr; gap: 0; }
+        }
+        @media (max-width: 390px) { .metrics { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar" aria-label="Athlete navigation">
+    <div class="sidebar-brand">
+        <img src="{% static 'images/logo.png' %}" alt="FitTrack logo">
+        <span>Fit<em>Track</em></span>
+    </div>
+    <p class="nav-label">Athlete Portal</p>
+    <nav class="nav-list">
+        <a class="nav-item active" href="{% url 'dashboard:athlete_dashboard' %}" aria-current="page">
+            <span class="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            </span>
+            Overview
+        </a>
+        <a class="nav-item" href="#recent-history">
+            <span class="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            </span>
+            My History
+        </a>
+        <a class="nav-item" href="{% url 'dashboard:athlete_password_change' %}">
+            <span class="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v3"/></svg>
+            </span>
+            Change Password
+        </a>
+    </nav>
+    <div class="sidebar-bottom">
+        <form method="post" action="/accounts/logout/">
+            {% csrf_token %}
+            <button type="submit" class="nav-item logout-button">
+                <span class="nav-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </span>
+                Logout
+            </button>
+        </form>
+    </div>
+</aside>
+<div class="main">
+<main>
+    <header>
+        <div>
+            <p class="eyebrow">FitTrack · Athlete Portal</p>
+            <h1>Welcome, {{ athlete.name }}</h1>
+            <p class="subtitle">{{ athlete.sport }}{% if athlete.sport %} · {% endif %}Athlete ID {{ athlete.athlete_id }}</p>
+        </div>
+        <a class="button" href="{% url 'dashboard:download_athlete_pdf' athlete.id %}">
+            <span aria-hidden="true">↓</span> Download My Report
+        </a>
+    </header>
+
+    {% if messages %}
+        <div aria-live="polite">
+            {% for message in messages %}
+                <div class="toast">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <section class="metrics" aria-label="Performance summary">
+        <article class="card">
+            <span class="card-label">Total Assessments</span>
+            <strong class="card-value">{{ total_assessments }}</strong>
+        </article>
+        <article class="card">
+            <span class="card-label">Average Score</span>
+            <strong class="card-value accent">{% if average_score != None %}{{ average_score|floatformat:1 }}<small style="font-size:.8rem"> / 100</small>{% else %}—{% endif %}</strong>
+        </article>
+        <article class="card">
+            <span class="card-label">BMI · Raw</span>
+            <strong class="card-value">{% if bmi != None %}{{ bmi|floatformat:2 }}{% else %}—{% endif %}</strong>
+        </article>
+        <article class="card">
+            <span class="card-label">Rank in Team</span>
+            <strong class="card-value">{% if leaderboard_rank %}#{{ leaderboard_rank }}{% else %}—{% endif %}</strong>
+            {% if leaderboard_rank %}<span class="muted">of {{ leaderboard_athlete_count }} ranked athletes</span>{% endif %}
+        </article>
+    </section>
+
+    <section class="panel">
+        <p class="eyebrow">Performance note</p>
+        <h2>AI Coaching Insight</h2>
+        <div class="insight">
+            <span class="insight-icon" aria-hidden="true">🤖</span>
+            <p class="insight-text">{{ coaching_insight }}</p>
+        </div>
+    </section>
+
+    <div class="grid">
+        <section class="panel">
+            <p class="eyebrow">Exercise breakdown</p>
+            <h2>Best &amp; Weakest</h2>
+            {% if exercise_averages|length == 1 %}
+                <p class="empty">Need more data to compare best and weakest exercises.</p>
+            {% elif exercise_averages %}
+                {% for item in best_exercises %}
+                    <div class="exercise-result">
+                        <div><span class="exercise-label">BEST{% if best_exercises|length > 1 %} · TIED{% endif %}</span><p class="exercise-name">{{ item.exercise }}</p></div>
+                        <span class="exercise-score">{{ item.average_score|floatformat:1 }}/100</span>
+                    </div>
+                {% endfor %}
+                {% for item in weakest_exercises %}
+                    <div class="exercise-result">
+                        <div><span class="exercise-label">NEEDS ATTENTION{% if weakest_exercises|length > 1 %} · TIED{% endif %}</span><p class="exercise-name">{{ item.exercise }}</p></div>
+                        <span class="exercise-score">{{ item.average_score|floatformat:1 }}/100</span>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="empty">Best and weakest exercises will appear when valid scores are available.</p>
+            {% endif %}
+        </section>
+        <section class="panel" id="recent-history">
+            <p class="eyebrow">Your team</p>
+            <h2>Leaderboard</h2>
+            {% if leaderboard %}
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Rank</th><th>Athlete</th><th>Average</th></tr></thead>
+                        <tbody>
+                            {% for item in leaderboard %}
+                                <tr><td>#{{ item.rank }}</td><td>{% if item.athlete_id == athlete.id %}You{% else %}{{ item.name }}{% endif %}</td><td class="score">{{ item.average_score|floatformat:1 }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="empty">Leaderboard rankings appear when valid scores are available.</p>
+            {% endif %}
+        </section>
+    </div>
+
+    <section class="panel">
+        <p class="eyebrow">Latest activity</p>
+        <h2>Recent History</h2>
+        {% if assessments %}
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Date</th><th>Exercise</th><th>Measurement</th><th>Score</th><th>Rating</th></tr></thead>
+                    <tbody>
+                        {% for assessment in assessments|slice:":5" %}
+                            {% if assessment.measurement_unit != "px" and assessment.benchmark_rating and assessment.benchmark_rating != "Not rated" %}
+                                <tr>
+                                    <td>{{ assessment.created_at|date:"d M Y" }}</td>
+                                    <td>{{ assessment.exercise }}</td>
+                                    <td>{{ assessment.measurement|floatformat:1 }} {{ assessment.measurement_unit }}</td>
+                                    <td>{% if assessment.score != None %}<span class="score">{{ assessment.score|floatformat:1 }}/100</span>{% else %}—{% endif %}</td>
+                                    <td>{{ assessment.benchmark_rating }}</td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty">No assessment history yet.</p>
+        {% endif %}
+    </section>
+</main>
+</div>
+</div>
+</body>
+</html>

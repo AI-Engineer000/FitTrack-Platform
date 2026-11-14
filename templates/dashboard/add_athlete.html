@@ -538,6 +538,12 @@
             </div>
         </header>
 
+        {% if messages %}
+            {% for message in messages %}
+                <div class="error-message" role="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
         <div class="form-card">
             <div class="form-header">
                 <h2>Athlete Details</h2>

@@ -9,6 +9,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'dashboard.css' %}">
+<style>
+    .password-field { position: relative; }
+    .password-field input { width: 100%; padding-right: 3.25rem; }
+    .password-toggle {
+        position: absolute; top: 50%; right: 12px; display: grid; place-items: center;
+        width: 32px; height: 32px; padding: 0; border: 0; border-radius: 6px;
+        background: transparent; color: #78827c; cursor: pointer; transform: translateY(-50%);
+    }
+    .password-toggle:hover { color: #1f6b48; }
+    .password-toggle:focus-visible { outline: 2px solid #1f6b48; }
+</style>
 </head>
 <body class="auth-body">
 
@@ -55,14 +66,16 @@
             <input type="text" name="phone">
         </div>
 
-        <div class="form-group">
+        <div class="form-group password-field">
             <label>Password</label>
             <input type="password" name="password1" required>
+            <button class="password-toggle" type="button" data-password-toggle aria-label="Show password" aria-pressed="false">👁️</button>
         </div>
 
-        <div class="form-group">
+        <div class="form-group password-field">
             <label>Confirm Password</label>
             <input type="password" name="password2" required>
+            <button class="password-toggle" type="button" data-password-toggle aria-label="Show password" aria-pressed="false">👁️</button>
         </div>
 
         <button type="submit" class="auth-btn">Create Account</button>
@@ -72,6 +85,19 @@
         Already have an account? <a href="{% url 'login' %}">Login</a>
     </p>
 </div>
+
+<script>
+    document.querySelectorAll("[data-password-toggle]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            const input = button.parentElement.querySelector("input");
+            const showPassword = input.type === "password";
+            input.type = showPassword ? "text" : "password";
+            button.textContent = showPassword ? "🙈" : "👁️";
+            button.setAttribute("aria-label", showPassword ? "Hide password" : "Show password");
+            button.setAttribute("aria-pressed", String(showPassword));
+        });
+    });
+</script>
 
 </body>
 </html>

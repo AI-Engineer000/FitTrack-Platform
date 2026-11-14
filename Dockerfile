@@ -25,7 +25,7 @@ COPY requirements.txt .
 RUn pip install --upgrade pip && \
     pip install torch==2.12.1 torchvision==0.27.1 \
         --index-url https://download.pytorch.org/whl/cpu && \
-    pip install -r requirements. txt
+    pip install -r requirements.txt
 # App code
 COPY . .
 

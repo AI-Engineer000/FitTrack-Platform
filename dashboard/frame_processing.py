@@ -42,13 +42,7 @@ def _estimate_pixels_per_cm(keypoints, athlete_height_cm):
         return None
     if len(keypoints) < 17 or not _keypoint_valid(keypoints[0]):
         return None
-    if not (
-        _keypoint_valid(keypoints[15])
-        and _keypoint_valid(keypoints[16])
-    ):
-        return None
-
-    upright_side = False
+    upright_ankles = []
     for shoulder_index, hip_index, knee_index, ankle_index in (
         (5, 11, 13, 15),
         (6, 12, 14, 16),
@@ -77,14 +71,17 @@ def _estimate_pixels_per_cm(keypoints, athlete_height_cm):
             and hip_angle >= UPRIGHT_ANGLE_THRESHOLD
             and knee_angle >= UPRIGHT_ANGLE_THRESHOLD
         ):
-            upright_side = True
-            break
-    if not upright_side:
+            upright_ankles.append(ankle)
+    if not upright_ankles:
         return None
 
-    nose_y = float(keypoints[0][1])
-    ankle_y = (float(keypoints[15][1]) + float(keypoints[16][1])) / 2
-    pixel_span = ankle_y - nose_y
+    ankle = max(upright_ankles, key=lambda point: float(point[2]))
+    pixel_span = float(
+        np.linalg.norm(
+            np.asarray(ankle[:2], dtype=float)
+            - np.asarray(keypoints[0][:2], dtype=float)
+        )
+    )
     if not np.isfinite(pixel_span) or pixel_span <= 0:
         return None
     return pixel_span / height_cm
@@ -111,7 +108,11 @@ def process_frame(frame_data, exercise, state, athlete_height_cm=None):
     try:
         frame_bytes = base64.b64decode(frame_data, validate=True)
     except Exception:
-        return {"error": "Invalid frame", "keypoints": [], "analysis": {"valid": False, "state": state}}
+        return {
+            "error": "Invalid frame",
+            "keypoints": [],
+            "analysis": analyze_exercise(exercise, [], state),
+        }
     frame_array = np.frombuffer(frame_bytes, np.uint8)
     frame = cv2.imdecode(frame_array, cv2.IMREAD_COLOR)
 

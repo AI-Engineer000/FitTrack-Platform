@@ -396,6 +396,72 @@
 
         .content-section { margin-bottom: 32px; }
 
+        .report-table-wrap {
+            overflow-x: auto;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .report-table th,
+        .report-table td {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .report-table th {
+            background: var(--surface-2);
+            color: var(--ink-soft);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .report-table td {
+            color: var(--ink);
+            font-size: 0.88rem;
+        }
+
+        .report-table tbody tr:nth-child(even) { background: var(--surface-2); }
+        .report-table tbody tr:last-child td { border-bottom: 0; }
+
+        .report-athlete-name { font-weight: 700; }
+        .report-athlete-id { color: var(--ink-muted); font-weight: 500; }
+        .report-score { font-weight: 700; color: var(--green); }
+        .download-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 9px 13px;
+            border-radius: 8px;
+            background: var(--green);
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            white-space: nowrap;
+            transition: background 0.15s, transform 0.15s;
+        }
+
+        .download-button:hover {
+            background: var(--green-dark);
+            transform: translateY(-1px);
+        }
+
+        .report-empty {
+            padding: 28px 20px;
+            color: var(--ink-muted);
+            text-align: center;
+        }
+
         .breakdown-list {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -808,111 +874,54 @@
             </div>
         </section>
 
-        {% if exercise_stats %}
-            <section class="content-section">
-                <div class="section-header">
-                    <div>
-                        <span class="section-kicker">Performance</span>
-                        <h2>Exercise Breakdown</h2>
-                    </div>
+        <section class="content-section">
+            <div class="section-header">
+                <div>
+                    <span class="section-kicker">Roster</span>
+                    <h2>Athlete-wise Assessment Reports</h2>
                 </div>
-
-                <div class="breakdown-list">
-                    {% for ex in exercise_stats %}
-                        <div class="breakdown-row">
-                            <div class="breakdown-name">
-                                {{ ex.name }}
-                                <span>{{ ex.count }} assessment{{ ex.count|pluralize }}</span>
-                            </div>
-                            <div class="breakdown-bar">
-                                <div class="breakdown-bar-fill" style="width: {{ ex.avg_score }}%"></div>
-                            </div>
-                            <div class="breakdown-score">
-                                {{ ex.avg_score|floatformat:0 }}<small>/100</small>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            </section>
-        {% endif %}
-
-        <section class="two-col">
-            <div class="info-card">
-                <div class="info-card-header">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12 2l3 6 6 .5-4.5 4 1.5 6-6-3.5-6 3.5 1.5-6-4.5-4 6-.5z"/>
-                    </svg>
-                    <h3>Top Performers</h3>
-                </div>
-
-                {% if top_athletes %}
-                    <div class="athlete-list">
-                        {% for item in top_athletes %}
-                            <div class="list-item">
-                                <div class="list-left">
-                                    <div class="list-avatar">{{ item.athlete.name|first|upper }}</div>
-                                    <div class="list-info">
-                                        <h4>{{ item.athlete.name }}</h4>
-                                        <p>{{ item.count }} assessment{{ item.count|pluralize }}</p>
-                                    </div>
-                                </div>
-                                <div class="list-score">
-                                    {{ item.avg_score|floatformat:0 }}<small>/100</small>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="empty-mini">No validated comparable scores are available.</p>
-                {% endif %}
             </div>
 
-            <div class="info-card">
-                <div class="info-card-header">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12 3v11"/>
-                        <path d="M12 14l5-3"/>
-                        <path d="M12 14l-5-3"/>
-                        <path d="M4 21h16"/>
-                    </svg>
-                    <h3>Focus Areas</h3>
-                </div>
-
-                {% if weakest_exercises %}
-                    <div class="weak-list">
-                        {% for ex in weakest_exercises %}
-                            <div class="list-item">
-                                <div class="list-left">
-                                    <div class="list-avatar coral">{{ forloop.counter }}</div>
-                                    <div class="list-info">
-                                        <h4>{{ ex.name }}</h4>
-                                        <p>{{ ex.count }} assessment{{ ex.count|pluralize }}</p>
-                                    </div>
-                                </div>
-                                <div class="list-score coral">
-                                    {{ ex.avg_score|floatformat:0 }}<small>/100</small>
-                                </div>
-                            </div>
+            <div class="report-table-wrap">
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Athlete Name (ID)</th>
+                            <th>Total Assessments</th>
+                            <th>Avg. Score (Comparable)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in athlete_reports %}
+                            <tr>
+                                <td>
+                                    <span class="report-athlete-name">{{ item.athlete.name }}</span>
+                                    <span class="report-athlete-id">({{ item.athlete.athlete_id }})</span>
+                                </td>
+                                <td>{{ item.total_assessments }}</td>
+                                <td>
+                                    {% if item.avg_score != None %}
+                                        <span class="report-score">{{ item.avg_score|floatformat:1 }}/100</span>
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a class="download-button" href="{% url 'dashboard:download_athlete_pdf' item.athlete.id %}">
+                                        Download PDF
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td class="report-empty" colspan="4">No athletes on your roster yet.</td>
+                            </tr>
                         {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="empty-mini">No validated comparable scores are available.</p>
-                {% endif %}
+                    </tbody>
+                </table>
             </div>
         </section>
-
-        {% if not exercise_stats %}
-            <div class="empty-state">
-                <div class="empty-illustration">
-                    <svg viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="9"/>
-                        <path d="M12 7v5l3 3"/>
-                    </svg>
-                </div>
-                <h3>No data to report</h3>
-                <p>Start running assessments to see analytics here.</p>
-            </div>
-        {% endif %}
     </main>
 
 </div>

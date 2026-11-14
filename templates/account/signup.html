@@ -276,6 +276,28 @@
 
         .input-wrap { position: relative; }
 
+        .password-field input { padding-right: 3.25rem; }
+
+        .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            display: grid;
+            place-items: center;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border: 0;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--ink-muted);
+            cursor: pointer;
+            transform: translateY(-50%);
+        }
+
+        .password-toggle:hover { color: var(--green); }
+        .password-toggle:focus-visible { outline: 2px solid var(--green); }
+
         .input-wrap input {
             width: 100%;
             padding: 12px 15px;
@@ -717,7 +739,7 @@
 
                 <div class="form-group">
                     <label for="id_password1">Create a password</label>
-                    <div class="input-wrap">
+                    <div class="input-wrap password-field">
                         <input
                             type="password"
                             name="password1"
@@ -726,6 +748,7 @@
                             autocomplete="new-password"
                             required
                         >
+                        <button class="password-toggle" type="button" data-password-toggle aria-label="Show password" aria-pressed="false">👁️</button>
                     </div>
                     <div class="password-rules">
                         <div class="password-rule">
@@ -745,7 +768,7 @@
 
                 <div class="form-group">
                     <label for="id_password2">Confirm password</label>
-                    <div class="input-wrap">
+                    <div class="input-wrap password-field">
                         <input
                             type="password"
                             name="password2"
@@ -754,6 +777,7 @@
                             autocomplete="new-password"
                             required
                         >
+                        <button class="password-toggle" type="button" data-password-toggle aria-label="Show password" aria-pressed="false">👁️</button>
                     </div>
                 </div>
 
@@ -847,6 +871,17 @@
 </div>
 
 <script>
+    document.querySelectorAll("[data-password-toggle]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            const input = button.parentElement.querySelector("input");
+            const showPassword = input.type === "password";
+            input.type = showPassword ? "text" : "password";
+            button.textContent = showPassword ? "🙈" : "👁️";
+            button.setAttribute("aria-label", showPassword ? "Hide password" : "Show password");
+            button.setAttribute("aria-pressed", String(showPassword));
+        });
+    });
+
     document.getElementById("themeToggle").addEventListener("click", function () {
         const current = document.documentElement.getAttribute("data-theme");
         const next = current === "dark" ? "light" : "dark";

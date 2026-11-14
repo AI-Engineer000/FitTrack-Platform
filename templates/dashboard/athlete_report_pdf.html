@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 14mm 12mm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            color: #233247;
+            font-size: 9pt;
+        }
+        .header {
+            width: 100%;
+            background-color: #14243A;
+            color: #FFFFFF;
+            border-collapse: collapse;
+        }
+        .header td {
+            border: none;
+            padding: 16px;
+            vertical-align: middle;
+        }
+        .logo-cell {
+            width: 28%;
+        }
+        .logo {
+            height: 50px;
+        }
+        .report-cell {
+            text-align: right;
+        }
+        .report-title {
+            font-size: 15pt;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .report-meta {
+            color: #E1E8F0;
+            line-height: 1.6;
+        }
+        .summary {
+            width: 100%;
+            margin-top: 16px;
+            border-collapse: separate;
+            border-spacing: 7px 0;
+        }
+        .summary td {
+            width: 25%;
+            padding: 12px 10px;
+            background-color: #F4F6FA;
+            border: 1px solid #E1E6EF;
+            border-radius: 8px;
+            vertical-align: top;
+        }
+        .summary-label {
+            color: #64748B;
+            font-size: 8pt;
+            text-transform: uppercase;
+        }
+        .summary-value {
+            color: #14243A;
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .section-title {
+            color: #14243A;
+            font-size: 12pt;
+            margin: 22px 0 8px;
+        }
+        .history {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .history th {
+            background-color: #14243A;
+            color: #FFFFFF;
+            font-weight: bold;
+            text-align: left;
+        }
+        .history th,
+        .history td {
+            padding: 8px 7px;
+            border: 1px solid #DFE5ED;
+        }
+        .insights {
+            border: 1px solid #C9D3E0;
+            background-color: #F8FAFC;
+            padding: 12px 14px;
+            margin-top: 20px;
+        }
+        .insights-title {
+            color: #14243A;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 7px;
+        }
+        .muted {
+            color: #64748B;
+        }
+    </style>
+</head>
+<body>
+    <table class="header">
+        <tr>
+            <td class="logo-cell">
+                <img class="logo" src="{{ logo_url }}">
+            </td>
+            <td class="report-cell">
+                <div class="report-title">ATHLETE PERFORMANCE REPORT</div>
+                <div class="report-meta">
+                    {{ athlete.name }}<br>
+                    Athlete ID: {{ athlete.athlete_id }}<br>
+                    Generated: {{ generated_at|date:"d M Y" }}
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <table class="summary">
+        <tr>
+            <td>
+                <div class="summary-label">Total Assessments</div>
+                <div class="summary-value">{{ assessment_count }}</div>
+            </td>
+            <td>
+                <div class="summary-label">Average Score</div>
+                <div class="summary-value">
+                    {% if average_score != None %}{{ average_score|floatformat:1 }}/100{% else %}—{% endif %}
+                </div>
+            </td>
+            <td>
+                <div class="summary-label">Sport</div>
+                <div class="summary-value">{{ athlete.sport|default:"—" }}</div>
+            </td>
+            <td>
+                <div class="summary-label">Trainer</div>
+                <div class="summary-value">{{ athlete.trainer.full_name|default:"—" }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <h2 class="section-title">Assessment History</h2>
+    {% if assessments %}
+        <table class="history">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Exercise</th>
+                    <th>Measurement</th>
+                    <th>Score</th>
+                    <th>Rating</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for assessment in assessments %}
+                    <tr style="background-color: {% cycle '#FFFFFF' '#F4F6FA' %};">
+                        <td>{{ assessment.created_at|date:"d M Y" }}</td>
+                        <td>{{ assessment.exercise }}</td>
+                        <td>{{ assessment.measurement|floatformat:1 }} {{ assessment.measurement_unit }}</td>
+                        <td>{{ assessment.score|floatformat:1 }}/100</td>
+                        <td>{{ assessment.benchmark_rating }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="muted">No fully processed assessment data is available yet.</p>
+    {% endif %}
+
+    <div class="insights">
+        <div class="insights-title">AI COACHING INSIGHTS</div>
+        <div>{{ coaching_insight }}</div>
+    </div>
+</body>
+</html>

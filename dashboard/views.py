@@ -2,14 +2,25 @@ import csv
 import json as json_module
 import logging
 import math
+import secrets
+import string
+from io import BytesIO
+from django.contrib.auth.models import User
 from django.conf import settings
-from django.http import JsonResponse, Http404
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.http import JsonResponse, Http404, HttpResponseServerError
+from django.contrib.auth.views import PasswordChangeDoneView, PasswordChangeView
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q
+from django.db import IntegrityError, transaction
+from django.db.models import Avg, Q
+from django.contrib.staticfiles import finders
+from django.templatetags.static import static
+from django.urls import reverse_lazy
+from django.utils import timezone
 from athletes.models import Athlete
 from assessments.models import Assessment
 from trainers.models import Trainer
@@ -18,6 +29,7 @@ from assessments.scoring import (
     apply_provisional_reference_rating,
     build_body_measurement_record,
 )
+from xhtml2pdf import pisa
 
 
 logger = logging.getLogger(__name__)
@@ -74,9 +86,272 @@ def _trainer_for(request):
     return trainer
 
 
+class AthletePasswordChangeView(
+    LoginRequiredMixin,
+    UserPassesTestMixin,
+    PasswordChangeView,
+):
+    template_name = "dashboard/athlete_password_change.html"
+    success_url = reverse_lazy("dashboard:athlete_password_change_done")
+
+    def test_func(self):
+        try:
+            return self.request.user.athlete is not None
+        except Athlete.DoesNotExist:
+            return False
+
+
+class AthletePasswordChangeDoneView(
+    LoginRequiredMixin,
+    UserPassesTestMixin,
+    PasswordChangeDoneView,
+):
+    def test_func(self):
+        try:
+            return self.request.user.athlete is not None
+        except Athlete.DoesNotExist:
+            return False
+
+    def get(self, request, *args, **kwargs):
+        messages.success(request, "Password changed successfully!")
+        return redirect("dashboard:athlete_dashboard")
+
+
 @login_required
 def profile(request):
     return redirect("accounts:profile_edit")
+
+
+@login_required
+def athlete_dashboard(request):
+    try:
+        athlete = request.user.athlete
+    except Athlete.DoesNotExist:
+        return redirect("dashboard:trainer_dashboard")
+
+    assessments = list(
+        Assessment.objects.filter(athlete=athlete).order_by("-created_at", "-pk")
+    )
+    valid_scores = [
+        assessment for assessment in assessments
+        if _has_provisional_score(assessment)
+    ]
+    average_score = (
+        sum(assessment.score for assessment in valid_scores) / len(valid_scores)
+        if valid_scores else None
+    )
+
+    exercise_score_totals = {}
+    for assessment in valid_scores:
+        exercise_score_totals.setdefault(assessment.exercise, []).append(
+            assessment.score
+        )
+    exercise_averages = [
+        {
+            "exercise": exercise,
+            "average_score": sum(scores) / len(scores),
+        }
+        for exercise, scores in exercise_score_totals.items()
+    ]
+    best_exercises = []
+    weakest_exercises = []
+    if exercise_averages:
+        best_score = max(item["average_score"] for item in exercise_averages)
+        weakest_score = min(item["average_score"] for item in exercise_averages)
+        best_exercises = [
+            item for item in exercise_averages
+            if item["average_score"] == best_score
+        ]
+        weakest_exercises = [
+            item for item in exercise_averages
+            if item["average_score"] == weakest_score
+        ]
+
+    latest_measurements = {}
+    for assessment in assessments:
+        expected_unit = {"Height": "cm", "Weight": "kg"}.get(
+            assessment.exercise
+        )
+        if (
+            assessment.exercise in {"Height", "Weight"}
+            and assessment.exercise not in latest_measurements
+            and assessment.measurement_status == "valid"
+            and assessment.measurement_unit == expected_unit
+            and math.isfinite(assessment.measurement)
+            and assessment.measurement > 0
+        ):
+            latest_measurements[assessment.exercise] = assessment.measurement
+
+    bmi = None
+    if {"Height", "Weight"} <= latest_measurements.keys():
+        height_m = latest_measurements["Height"] / 100
+        bmi = latest_measurements["Weight"] / (height_m * height_m)
+
+    leaderboard = []
+    leaderboard_rank = None
+    leaderboard_tie_count = 0
+    if athlete.trainer_id is not None:
+        peer_averages = (
+            Athlete.objects.filter(trainer_id=athlete.trainer_id)
+            .annotate(
+                average_score=Avg(
+                    "assessments__score",
+                    filter=Q(
+                        assessments__score__isnull=False,
+                        assessments__score__gt=-float("inf"),
+                        assessments__score__lt=float("inf"),
+                        assessments__measurement_status__in={"valid", "legacy"},
+                        assessments__benchmark_status="available",
+                        assessments__scoring_method_version=(
+                            REFERENCE_SCORING_METHOD_VERSION
+                        ),
+                        assessments__benchmark_rating__gt="",
+                    ),
+                )
+            )
+            .values("id", "name", "average_score")
+        )
+        for peer in peer_averages:
+            peer_average = peer["average_score"]
+            if peer["id"] == athlete.id:
+                peer_average = average_score
+            if peer_average is not None and math.isfinite(peer_average):
+                leaderboard.append({
+                    "athlete_id": peer["id"],
+                    "name": peer["name"],
+                    "average_score": peer_average,
+                    "ranking_score": round(peer_average, 2),
+                })
+
+        leaderboard.sort(
+            key=lambda item: (-item["ranking_score"], item["name"].lower())
+        )
+        if average_score is not None:
+            own_ranking_score = round(average_score, 2)
+            leaderboard_rank = 1 + sum(
+                item["ranking_score"] > own_ranking_score
+                for item in leaderboard
+            )
+            leaderboard_tie_count = sum(
+                item["ranking_score"] == own_ranking_score
+                for item in leaderboard
+            )
+            for item in leaderboard:
+                item["rank"] = 1 + sum(
+                    other["ranking_score"] > item["ranking_score"]
+                    for other in leaderboard
+                )
+
+    if valid_scores:
+        latest_score = valid_scores[0].score
+        coaching_insight = f"Your latest score is {latest_score:g}/100."
+        if len(valid_scores) > 1 and latest_score < valid_scores[1].score:
+            coaching_insight = (
+                "Your latest score dropped compared to your previous assessment."
+            )
+    else:
+        latest_score = None
+        coaching_insight = "No valid scores are available yet."
+
+    context = {
+        "athlete": athlete,
+        "assessments": assessments,
+        "total_assessments": len(assessments),
+        "average_score": average_score,
+        "bmi": bmi,
+        "exercise_averages": exercise_averages,
+        "best_exercises": best_exercises,
+        "weakest_exercises": weakest_exercises,
+        "leaderboard": leaderboard,
+        "leaderboard_rank": leaderboard_rank,
+        "leaderboard_tie_count": leaderboard_tie_count,
+        "leaderboard_athlete_count": len(leaderboard),
+        "latest_score": latest_score,
+        "coaching_insight": coaching_insight,
+    }
+    return render(request, "dashboard/athlete_dashboard.html", context)
+
+
+@login_required
+def download_athlete_pdf(request, athlete_id):
+    try:
+        athlete = request.user.athlete
+    except Athlete.DoesNotExist:
+        try:
+            trainer = request.user.trainer
+        except Trainer.DoesNotExist:
+            return redirect("dashboard:trainer_dashboard")
+        athlete = get_object_or_404(
+            Athlete,
+            id=athlete_id,
+            trainer=trainer,
+        )
+
+    assessments = list(
+        Assessment.objects.filter(athlete=athlete).order_by("-created_at", "-pk")
+    )
+    assessments = [
+        assessment for assessment in assessments
+        if not str(assessment.measurement).strip().lower().endswith("px")
+        and not assessment.measurement_unit.strip().lower().endswith("px")
+        and assessment.score is not None
+        and math.isfinite(assessment.score)
+        and assessment.benchmark_rating.strip().lower() not in {"", "not rated"}
+    ]
+    valid_scores = [
+        assessment for assessment in assessments
+        if _has_provisional_score(assessment)
+    ]
+    average_score = (
+        sum(assessment.score for assessment in valid_scores) / len(valid_scores)
+        if valid_scores else None
+    )
+    if valid_scores:
+        latest_score = valid_scores[0].score
+        coaching_insight = f"Your latest score is {latest_score:g}/100."
+        if len(valid_scores) > 1 and latest_score < valid_scores[1].score:
+            coaching_insight = (
+                "Your latest score dropped compared to your previous assessment."
+            )
+    else:
+        coaching_insight = "No valid scores are available yet."
+    logo_url = request.build_absolute_uri(static("dashboard/images/logo.png"))
+    logo_path = finders.find("dashboard/images/logo.png")
+    if not logo_path:
+        logger.error("PDF logo asset could not be found")
+        return HttpResponseServerError("Unable to load the athlete report logo.")
+
+    def pdf_link_callback(uri, rel):
+        return logo_path if uri == logo_url else uri
+
+    html = render(
+        request,
+        "dashboard/athlete_report_pdf.html",
+        {
+            "athlete": athlete,
+            "assessments": assessments[:5],
+            "assessment_count": len(assessments),
+            "average_score": average_score,
+            "coaching_insight": coaching_insight,
+            "logo_url": logo_url,
+            "generated_at": timezone.now(),
+        },
+    ).content.decode("utf-8")
+    pdf_buffer = BytesIO()
+    pdf_status = pisa.CreatePDF(
+        html,
+        dest=pdf_buffer,
+        link_callback=pdf_link_callback,
+    )
+    if pdf_status.err:
+        logger.error("PDF generation failed for athlete %s", athlete.pk)
+        return HttpResponseServerError("Unable to generate the athlete report.")
+
+    response = HttpResponse(pdf_buffer.getvalue(), content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="athlete-report-{athlete.athlete_id}.pdf"'
+    )
+    return response
 
 
 @login_required
@@ -168,14 +443,42 @@ def add_athlete(request):
         email = request.POST.get("email", "")
 
         if name and athlete_id and age and gender:
-            Athlete.objects.create(
-                trainer=_trainer_for(request),
-                name=name,
-                athlete_id=athlete_id,
-                age=int(age),
-                gender=gender,
-                sport=sport,
-                email=email,
+            alphabet = string.ascii_letters + string.digits
+            temporary_password = "".join(
+                secrets.choice(alphabet) for _ in range(8)
+            )
+            try:
+                with transaction.atomic():
+                    athlete = Athlete.objects.create(
+                        trainer=_trainer_for(request),
+                        name=name,
+                        athlete_id=athlete_id,
+                        age=int(age),
+                        gender=gender,
+                        sport=sport,
+                        email=email,
+                    )
+                    athlete_user = User.objects.create_user(
+                        username=athlete.athlete_id,
+                        email=f"{athlete.athlete_id}@fittrack.local",
+                    )
+                    athlete_user.set_password(temporary_password)
+                    athlete_user.save(update_fields=["password"])
+                    athlete.user = athlete_user
+                    athlete.save(update_fields=["user"])
+            except (IntegrityError, ValueError):
+                messages.error(
+                    request,
+                    "Could not add the athlete. Check the athlete ID and age, "
+                    "then try again.",
+                )
+                return redirect("dashboard:add_athlete")
+
+            messages.success(
+                request,
+                f"Athlete Added! Login Username: {athlete.athlete_id} | "
+                f"Temporary Password: {temporary_password}. Please save this "
+                "now; it will not be shown again.",
             )
             return redirect("dashboard:trainer_dashboard")
 
@@ -397,17 +700,51 @@ def exercise_selection(request, athlete_id):
 @login_required
 def reports(request):
     trainer = _trainer_for(request)
-    athletes = Athlete.objects.filter(trainer=trainer)
-    assessments = Assessment.objects.filter(athlete__trainer=trainer)
+    athletes = list(
+        Athlete.objects.filter(trainer=trainer).order_by("name", "athlete_id")
+    )
+    athlete_reports = {
+        athlete.pk: {
+            "athlete": athlete,
+            "total_assessments": 0,
+            "valid_scores": [],
+        }
+        for athlete in athletes
+    }
+    assessments = Assessment.objects.filter(
+        athlete__trainer=trainer
+    ).iterator()
+    valid_scores = []
+    total_assessments = 0
+    for assessment in assessments:
+        report = athlete_reports[assessment.athlete_id]
+        report["total_assessments"] += 1
+        total_assessments += 1
+        if _has_provisional_score(assessment):
+            report["valid_scores"].append(assessment.score)
+            valid_scores.append(assessment.score)
 
-    overall_average = None
+    overall_average = (
+        sum(valid_scores) / len(valid_scores) if valid_scores else None
+    )
+    for report in athlete_reports.values():
+        scores = report.pop("valid_scores")
+        report["avg_score"] = (
+            round(sum(scores) / len(scores), 1) if scores else None
+        )
+
     exercise_stats = []
     top_athletes = []
     weakest_exercises = []
 
     return render(request, "trainers/reports.html", {
-        "total_athletes": athletes.count(),
-        "total_assessments": assessments.count(),
+        "athlete_reports": list(athlete_reports.values()),
+        "total_athletes": len(athletes),
+        "total_assessments": total_assessments,
+        "overall_average": (
+            round(overall_average, 1)
+            if overall_average is not None else None
+        ),
         "overall_avg": (
             round(overall_average, 1)
             if overall_average is not None else None
@@ -559,6 +896,9 @@ def _analyze_frame_sync(frame_data, exercise, state, athlete_height_cm=None):
 
 @csrf_exempt
 def analyze_frame(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Login required"}, status=401)
+
     if request.method != "POST":
         return JsonResponse({"error": "POST required"}, status=405)
 
@@ -566,22 +906,27 @@ def analyze_frame(request):
         frame_data = request.POST.get("frame", "")
         exercise = request.POST.get("exercise", "")
         state_raw = request.POST.get("state", "{}")
-        height_raw = request.POST.get("athlete_height_cm", "").strip()
-        try:
-            athlete_height_cm = float(height_raw) if height_raw else None
-        except ValueError:
-            return JsonResponse(
-                {"error": "Athlete height must be a number in centimeters."},
-                status=400,
+        athlete_height_cm = 170.0
+        athlete_id = request.POST.get("athlete_id", "").strip()
+        if athlete_id:
+            athlete = get_object_or_404(
+                Athlete,
+                id=athlete_id,
+                trainer=_trainer_for(request),
             )
-        if athlete_height_cm is not None and (
-            not math.isfinite(athlete_height_cm)
-            or not 100 <= athlete_height_cm <= 250
-        ):
-            return JsonResponse(
-                {"error": "Athlete height must be between 100 and 250 cm."},
-                status=400,
-            )
+            saved_height = athlete.assessments.filter(
+                exercise="Height",
+                measurement_unit="cm",
+                measurement_status="valid",
+            ).order_by("-created_at").values_list(
+                "measurement", flat=True,
+            ).first()
+            if (
+                saved_height is not None
+                and math.isfinite(saved_height)
+                and 100 <= saved_height <= 250
+            ):
+                athlete_height_cm = float(saved_height)
 
         try:
             from dashboard.tasks import analyze_frame_task
@@ -603,6 +948,8 @@ def analyze_frame(request):
             return _analyze_frame_sync(
                 frame_data, exercise, state, athlete_height_cm)
 
+    except Http404:
+        return JsonResponse({"error": "Athlete not found"}, status=404)
     except Exception:
         logger.exception("Frame analysis request failed")
         return JsonResponse({"error": "Frame analysis failed"}, status=500)

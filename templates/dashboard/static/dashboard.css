@@ -59,9 +59,9 @@ h1, h2, h3, h4 {
   font-weight: 700;
   line-height: 1.12;
 }
-h1 { margin-bottom: 0; font-size: 1.9rem; letter-spacing: -.01em; }
-h2 { margin-bottom: 0; font-size: 1.4rem; }
-h3 { margin-bottom: 0; font-size: 1.1rem; }
+h1 { margin-bottom: 0; font-size: 2rem; letter-spacing: -.01em; }
+h2 { margin-bottom: 0; font-size: 1.5rem; }
+h3 { margin-bottom: 0; font-size: 1.15rem; }
 ::selection { color: var(--ink); background: #d4e5db; }
 
 /* Application layout and sidebar */
@@ -235,7 +235,7 @@ button:disabled, .btn-run.disabled, .google-button[aria-disabled='true'] { curso
 .blue { background: var(--blue-soft); color: var(--blue); }
 .amber { background: var(--amber-soft); color: var(--amber); }
 .stat-tile-label, .athlete-stat-label { color: var(--ink-muted); font-size: .75rem; font-weight: 500; }
-.stat-tile-value { margin-top: 3px; color: var(--ink); font-size: 1.55rem; font-weight: 700; line-height: 1.1; }
+.stat-tile-value { margin-top: 3px; color: var(--ink); font-size: 1.65rem; font-weight: 700; line-height: 1.1; }
 .stat-tile-value span { margin-left: 4px; color: var(--ink-muted); font-size: .75rem; font-weight: 500; }
 .athlete-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 16px; }
 .athlete-card { min-width: 0; padding: 20px; transition: all .2s ease; }
@@ -246,7 +246,7 @@ button:disabled, .btn-run.disabled, .google-button[aria-disabled='true'] { curso
 .athlete-info h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .athlete-info p { margin: 4px 0 0; overflow: hidden; color: var(--ink-muted); font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
 .athlete-card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 0; margin-top: 16px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-.athlete-stat-value { margin-top: 3px; color: var(--ink); font-size: 1rem; font-weight: 700; }
+.athlete-stat-value { margin-top: 3px; color: var(--ink); font-size: 1.05rem; font-weight: 700; }
 .athlete-stat-value span { margin-left: 3px; color: var(--ink-muted); font-size: .75rem; font-weight: 500; }
 .athlete-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 14px; }
 .athlete-date { color: var(--ink-soft); font-size: .76rem; }
@@ -587,4 +587,3 @@ input[type='checkbox'] { width: 16px; height: 16px; min-height: 16px; accent-col
     transition-duration: .01ms !important;
   }
 }
-

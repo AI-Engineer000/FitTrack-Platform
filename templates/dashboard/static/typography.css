@@ -1,17 +1,64 @@
-body,
-body * {
-  font-family: "Times New Roman", Times, serif !important;
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: "Times New Roman", Times, serif !important;
-  font-weight: 700;
-  letter-spacing: normal;
-  line-height: 1.2;
-  text-transform: none;
+body {
+  font-size: 16px !important;
+}
+
+:root {
+  --ink-muted: #68736b !important;
+  --border: #d7dfd8 !important;
+  --shadow-sm: 0 1px 3px rgba(20, 30, 25, .06) !important;
+  --shadow-md: 0 4px 14px rgba(20, 30, 25, .08) !important;
+  --shadow-lg: 0 12px 30px rgba(20, 30, 25, .1) !important;
+  --shadow-subtle: 0 1px 3px rgba(20, 30, 25, .05) !important;
+  --shadow: 0 1px 3px rgba(20, 30, 25, .05), 0 5px 16px rgba(20, 30, 25, .05) !important;
+  --shadow-elevated: 0 6px 24px rgba(20, 30, 25, .11) !important;
+}
+
+[data-theme="dark"] {
+  --ink-muted: #b4beb7 !important;
+  --border: #34423a !important;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, .22) !important;
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, .28) !important;
+  --shadow-lg: 0 12px 30px rgba(0, 0, 0, .34) !important;
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, .2) !important;
+  --shadow: 0 1px 3px rgba(0, 0, 0, .2), 0 5px 16px rgba(0, 0, 0, .24) !important;
+  --shadow-elevated: 0 6px 24px rgba(0, 0, 0, .38) !important;
+}
+
+small,
+label,
+th,
+[class*="label"],
+[class*="kicker"],
+[class*="caption"],
+[class*="role"],
+[class*="date"],
+[class*="time"],
+[class*="hint"],
+[class*="tag"],
+[class*="rating"],
+[class*="badge"],
+[class*="category"],
+[class*="muted"] {
+  font-size: .78rem !important;
+  line-height: 1.4;
+}
+
+td,
+[class*="history-row"] {
+  font-size: .9rem !important;
+  line-height: 1.45;
+}
+
+button,
+input,
+select,
+textarea,
+[class*="btn"],
+[class*="button"] {
+  font-size: max(.9rem, 1em) !important;
 }

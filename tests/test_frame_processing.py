@@ -23,8 +23,10 @@ def test_process_frame_does_not_invent_physical_scale_from_person_height():
     keypoints = np.zeros((1, 17, 3), dtype=float)
     keypoints[0, :, 2] = 0.9
     keypoints[0, 0, 1] = 100
-    keypoints[0, 15, 1] = 410
+    keypoints[0, 11] = [100, 100, 0.9]
+    keypoints[0, 13] = [100, 200, 0.9]
     keypoints[0, 16, 1] = 440
+    keypoints[0, 15] = [200, 200, 0.9]
 
     fake_results = SimpleNamespace(
         keypoints=SimpleNamespace(data=_FakeTensor(keypoints))
@@ -42,6 +44,8 @@ def test_process_frame_does_not_invent_physical_scale_from_person_height():
 
     assert "pixels_per_cm" not in result["analysis"]["state"]
     assert result["analysis"]["unit"] == "px"
+    assert result["analysis"]["tracked_joint_angle"] == 90.0
+    assert result["analysis"]["joint_name"] == "Knee Flexion"
     assert result["frame_width"] == 640
     assert result["frame_height"] == 480
 
@@ -49,11 +53,12 @@ def test_process_frame_does_not_invent_physical_scale_from_person_height():
 def test_process_frame_estimates_scale_from_confident_upright_pose():
     keypoints = np.zeros((1, 17, 3), dtype=float)
     keypoints[0, :, 2] = 0.9
-    keypoints[0, 0] = [100, 50, 0.9]
+    keypoints[0, 0] = [200, 50, 0.9]
     keypoints[0, [5, 6]] = [100, 100, 0.9]
     keypoints[0, [11, 12]] = [100, 200, 0.9]
     keypoints[0, [13, 14]] = [100, 300, 0.9]
     keypoints[0, [15, 16]] = [100, 450, 0.9]
+    keypoints[0, 16, 2] = 0.0
     fake_results = SimpleNamespace(
         keypoints=SimpleNamespace(data=_FakeTensor(keypoints))
     )
@@ -69,7 +74,8 @@ def test_process_frame_estimates_scale_from_confident_upright_pose():
         calibrated = process_frame(
             image_data, "vertical-jump", {}, athlete_height_cm=200)
 
-    assert calibrated["analysis"]["state"]["pixels_per_cm"] == 2.0
+    assert calibrated["analysis"]["state"]["pixels_per_cm"] == (
+        np.hypot(100, 400) / 200)
     assert calibrated["analysis"]["state"]["calibration_status"] == "estimated"
     assert calibrated["analysis"]["unit"] == "cm"
 
@@ -102,8 +108,10 @@ def test_process_frame_does_not_estimate_scale_from_non_upright_pose():
 
 
 def test_process_frame_handles_invalid_image_data():
-    result = process_frame("invalid_base64_data", "vertical-jump", {})
+    result = process_frame("invalid_base64_data", "sit-ups", {})
     assert "error" in result
+    assert result["analysis"]["tracked_joint_angle"] is None
+    assert result["analysis"]["joint_name"] == "Hip Flexion"
 
 
 def test_process_frame_handles_no_person_detected():

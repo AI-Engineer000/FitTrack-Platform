@@ -12,6 +12,7 @@ db.sqlite3
 logs/
 /staticfiles/
 /media/
+/athlete_credentials.txt
 
 # Environment
 .env
