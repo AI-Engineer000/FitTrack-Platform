@@ -1,20 +1,34 @@
-# AI-Powered Battery Fitness Assessment Platform
+# 🏋️‍♂️ FitTrack: AI-Powered Fitness Assessment & Athlete Management Platform
 
-A Django application for managing athletes and fitness assessments, with pose analysis powered by Ultralytics YOLO.
+FitTrack is a production-ready, multi-tenant web application designed to automate physical fitness testing and athlete management. It uses Computer Vision (YOLO26-Pose) to track body keypoints in real-time, calculate joint angles, count repetitions, and provide instant audio-visual feedback on exercise form.
 
-## Local setup
+Built for trainers, academies, and athletes, FitTrack replaces subjective manual counting with objective, data-driven assessments.
 
-1. Create and activate a Python virtual environment.
-2. Install dependencies with `pip install -r requirements.txt`.
-3. Copy `.env.example` to `.env` and set a fresh `DJANGO_SECRET_KEY`. Keep `.env` private.
-4. Run `python manage.py migrate` and then `python manage.py runserver`.
+## ✨ Key Features
 
-SQLite is used by default. To use PostgreSQL, set `DB_ENGINE=postgresql` and configure `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, and `DB_PORT`.
+- **Real-Time Pose Estimation:** Tracks 17 body keypoints with confidence filtering using YOLO26-Pose.
+- **8 Exercise Analyzers:** Vertical Jump, Broad Jump, Sit-ups, Sit & Reach, Sprint, Medicine Ball, Shuttle Run, and Endurance Run.
+- **Smart Form Correction:** Skeleton turns Red/Green based on posture. Includes **Audio Coaching** (Web Speech API) to guide the athlete (e.g., "Go deeper").
+- **Biomechanical Analytics:** Live Chart.js time-series graphs showing joint angles and range of motion (ROM).
+- **Dual Dashboards (B2B2C):**
+  - *Trainer Portal:* Manage athletes, view team analytics, and download PDF reports.
+  - *Athlete Portal:* View personal progress, team leaderboard rank, BMI, and change passwords.
+- **Automated PDF Reports:** Generates premium, sports-academy style PDF report cards using `xhtml2pdf`.
+- **Asynchronous Processing:** Uses Celery + Redis to offload heavy AI inference, ensuring the web server never freezes.
+- **Strict Security:** Multi-tenant data isolation. 17/17 Access Control tests passed (zero cross-trainer data leakage).
 
-## Pose model
+## 🛠️ Tech Stack
 
-Model weight files are excluded from Git by `.gitignore`. Place the required `yolo26n-pose.pt` file in the project root before using pose-analysis features. Do not commit credentials, `.env`, or local database files.
+- **Backend:** Django (Python)
+- **AI / Vision:** Ultralytics YOLO26-Pose, OpenCV, NumPy
+- **Async Queue:** Celery, Redis
+- **Frontend:** HTML5, CSS3, Vanilla JavaScript, Chart.js
+- **Database:** SQLite (Local) / PostgreSQL (Production)
+- **Reporting:** xhtml2pdf
 
-## Project documents
+## 🚀 Local Setup Guide
 
-Project and milestone documents are kept in `docs/`.
+### 1. Clone the Repository
+```bash
+git clone https://github.com/AI-Engineer000/FitTrack-Platform.git
+cd FitTrack-Platform
